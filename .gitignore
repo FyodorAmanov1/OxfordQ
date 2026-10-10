@@ -7,3 +7,10 @@ assets/
 output/
 output-*/
 examples/midi/
+
+# Quantum Duet local environments and build/test outputs
+.venv-*/
+.test-*/
+build/
+dist/
+.env.*

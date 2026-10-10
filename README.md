@@ -337,3 +337,5 @@ with provider=. quantumOrchestrator.py is a compatibility CLI entry.
 Tests cover lead/provenance protection, independent tempi, MIDI selection, sustain,
 excerpt boundaries, key reconciliation, budgets, malformed edits, instrument
 constraints, failed plans, correction feedback, provider failures and SDK request shape.
+
+## Quantum Duet import
