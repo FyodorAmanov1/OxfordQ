@@ -1,0 +1,25 @@
+<main class="app">
+  <header class="hero"><div><p class="eyebrow">POP909 · QISKIT · INTERACTIVE QUANTUM MUSIC</p><h1>Quantum Harmony Studio</h1><p class="subtitle">Compose a pop chord progression from trained parameterised quantum circuits.</p></div><span class="hero-badge">Major-key model</span></header>
+  <section class="card composer">
+    <div class="section-heading"><div><p class="eyebrow">COMPOSE</p><h2>Shape the harmony</h2></div><p class="small">Minor mode is not enabled: this model was trained on POP909 major-key sections.</p></div>
+    <div class="control-grid">
+      <label>Key<select id="key"><option>C</option><option>Db</option><option>D</option><option>Eb</option><option>E</option><option>F</option><option>F#</option><option>G</option><option>Ab</option><option>A</option><option>Bb</option><option>B</option></select></label>
+      <label>Length<select id="bars"><option>8</option><option selected>16</option><option>32</option></select></label>
+      <label>Harmonic colour<select id="colour"><option value="diatonic">Diatonic</option><option value="original" selected>Original quantum distribution</option><option value="chromatic">Chromatic</option></select></label>
+      <label>Shots / context<input id="shots" type="number" min="16" max="4096" step="1" value="1024"></label>
+      <label>Seed<input id="seed" type="number" value="42"></label>
+    </div>
+    <div class="action-row"><button id="generate" class="primary">✦ Generate harmony</button><button id="variation" disabled>↻ New variation</button><span id="status" role="status">Ready · select a free Qollab simulator before generating.</span></div>
+  </section>
+  <section id="empty-state" class="card empty"><div class="empty-mark">♪</div><div><h2>Your quantum progression will appear here.</h2><p class="muted">Generate once to measure the required PQC contexts. Later variations reuse cached measured distributions when possible.</p></div></section>
+  <div id="workspace" hidden>
+    <section class="card harmony-card"><div class="section-heading"><div><p class="eyebrow">GENERATED HARMONY</p><h2 id="key-display">—</h2></div><div class="run-meta"><span>Backend <b id="backend">—</b></span><span>Jobs <b id="jobs">—</b></span><span>Seed <b id="seed-used">—</b></span></div></div><p id="sequence-display" class="sequence"></p><div id="timeline" class="timeline"></div></section>
+    <section class="card playback-card"><div class="section-heading"><div><p class="eyebrow">LISTEN</p><h2>Hear the generated chords directly</h2></div><p class="small">Playback is classical browser synthesis; it requests no quantum shots.</p></div>
+      <div class="control-grid playback-controls"><label>Sound<select id="sound"><option value="piano">Piano-like</option><option value="strings">Strings</option><option value="synth">Synth</option></select></label><label>Pattern<select id="pattern"><option value="block">Block chords</option><option value="arpeggio">Arpeggio</option><option value="pulse">Pulse</option></select></label><label>Tempo · <span id="tempo-value">110 BPM</span><input id="tempo" type="range" min="60" max="160" value="110"></label></div>
+      <div class="action-row"><button id="play" class="primary" disabled>▶ Play</button><button id="stop" disabled>■ Stop</button><button id="export" disabled>Export run JSON</button><span id="playback-status">Stopped</span></div><div id="export-panel" hidden class="export-panel"><label>Export payload<textarea id="export-payload" rows="5" readonly></textarea></label><p class="small">In Qollab's sandbox, copy this payload or use the platform output controls.</p></div>
+    </section>
+    <section class="card inspector"><div class="section-heading"><div><p class="eyebrow">QUANTUM INSPECTOR</p><h2>Click a chord to see where it came from</h2></div><span id="model-summary" class="tag">3q + 4q PQC</span></div><div id="inspector-body"></div></section>
+  </div>
+  <details class="card technical"><summary>How it works · technical boundary</summary><p>The 3-qubit POP909 PQC represents eight coarse harmonic classes: I, ii, iii, IV, V, vi, vii° and OTHER. If OTHER is sampled, a 4-qubit resolver chooses among fifteen common chromatic classes plus RARE_OTHER.</p><p>Each new context is measured on the Qollab-selected backend with one circuit per backend submission. The measured histogram is cached for the page session. “Diatonic” and “Chromatic” are transparent classical post-filters applied after measurement; “Original” uses the measured coarse distribution unchanged.</p><p>The model was trained on major-key sections only. Browser sound synthesis, transposition to the chosen key, random sampling from returned histograms and the rare-class fallback are classical. No quantum advantage or musical-quality advantage is claimed.</p></details>
+  <footer>Quantum Harmony Studio · POP909 hierarchical PQC · Qiskit · Qollab</footer>
+</main>
