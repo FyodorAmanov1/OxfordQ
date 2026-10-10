@@ -1,0 +1,174 @@
+{
+  "records": [
+    {
+      "original": "deploy/qollab/quantum_motif/circuit.py",
+      "imported": "components/quantum_duet/src/quantum_duet/circuit.py",
+      "original_sha256": "542c0a625515a888f43b06f388d10953048b4515eea3e107da1b901ac3b4bc6e",
+      "imported_sha256": "542c0a625515a888f43b06f388d10953048b4515eea3e107da1b901ac3b4bc6e",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/quantum_motif/duet_classical.py",
+      "imported": "components/quantum_duet/src/quantum_duet/duet_classical.py",
+      "original_sha256": "2764d215a11083b8b25ca969e10e38b1bbfb14413ddeba6311d25610746a3163",
+      "imported_sha256": "2764d215a11083b8b25ca969e10e38b1bbfb14413ddeba6311d25610746a3163",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/quantum_motif/duet_quantum.py",
+      "imported": "components/quantum_duet/src/quantum_duet/duet_quantum.py",
+      "original_sha256": "bc13b993d73e896e0a7fb2614f51b582b43c52f91465fb1de8928929c56b3e18",
+      "imported_sha256": "bc13b993d73e896e0a7fb2614f51b582b43c52f91465fb1de8928929c56b3e18",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/quantum_motif/duet_referee.py",
+      "imported": "components/quantum_duet/src/quantum_duet/duet_referee.py",
+      "original_sha256": "654f81a90791122dfdfabe38051f3344aca7d5b09fd0f786ca9f328d9fe418b5",
+      "imported_sha256": "654f81a90791122dfdfabe38051f3344aca7d5b09fd0f786ca9f328d9fe418b5",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/quantum_motif/integration.py",
+      "imported": "components/quantum_duet/src/quantum_duet/integration.py",
+      "original_sha256": "7bd1c2327da76ce5e2cf398c20c45233e16e0411191a54da50a5a37b29658fd0",
+      "imported_sha256": "7bd1c2327da76ce5e2cf398c20c45233e16e0411191a54da50a5a37b29658fd0",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/quantum_motif/music.py",
+      "imported": "components/quantum_duet/src/quantum_duet/music.py",
+      "original_sha256": "6bb46c6699ed466a89d9669b17b61e928826b18b83365b0f9b913fbe75f46727",
+      "imported_sha256": "6bb46c6699ed466a89d9669b17b61e928826b18b83365b0f9b913fbe75f46727",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/quantum_motif/probe.py",
+      "imported": "components/quantum_duet/src/quantum_duet/probe.py",
+      "original_sha256": "b3c84f0e7bc8cf447443ad252279a1953ac11b7b90786a423d1a42f49f4048ce",
+      "imported_sha256": "b3c84f0e7bc8cf447443ad252279a1953ac11b7b90786a423d1a42f49f4048ce",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/quantum_motif/__init__.py",
+      "imported": "components/quantum_duet/src/quantum_duet/__init__.py",
+      "original_sha256": "9fa68700b3facaa4d71be73e3e7fe9153744fc5ff216ae17b772e59de4e09bd9",
+      "imported_sha256": "9fa68700b3facaa4d71be73e3e7fe9153744fc5ff216ae17b772e59de4e09bd9",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/data/melody_angles.json",
+      "imported": "components/quantum_duet/src/quantum_duet/data/melody_angles.json",
+      "original_sha256": "791fb91891348bedccd3714ba9b70c090de5f29d9c7d2b12d159bc6b7d9bebba",
+      "imported_sha256": "791fb91891348bedccd3714ba9b70c090de5f29d9c7d2b12d159bc6b7d9bebba",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/data/recorded_melody.json",
+      "imported": "components/quantum_duet/src/quantum_duet/data/recorded_melody.json",
+      "original_sha256": "73717d6a3cd77eafb53428f4ae27e66aa5fc3f65527533341f07b62d2c0de76c",
+      "imported_sha256": "73717d6a3cd77eafb53428f4ae27e66aa5fc3f65527533341f07b62d2c0de76c",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/data/selected_angles.json",
+      "imported": "components/quantum_duet/src/quantum_duet/data/selected_angles.json",
+      "original_sha256": "82d0c0f4e0d6efe80b6228c00ae1948da1f0dd10bd7a519c95db9b0870b06a09",
+      "imported_sha256": "82d0c0f4e0d6efe80b6228c00ae1948da1f0dd10bd7a519c95db9b0870b06a09",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/index.html",
+      "imported": "components/quantum_duet/web/index.html",
+      "original_sha256": "4d4a818009420be750304aa7d060ff6fc674f09c28757d0c5ed041773241e695",
+      "imported_sha256": "4d4a818009420be750304aa7d060ff6fc674f09c28757d0c5ed041773241e695",
+      "transformed": true
+    },
+    {
+      "original": "deploy/qollab/main.js",
+      "imported": "components/quantum_duet/web/main.js",
+      "original_sha256": "f5e48b3cc7be0d3b31ac2b1c71354fa7148f4858cee74376cb626585efbcc290",
+      "imported_sha256": "ca0706852fc2f7cc3d0a2bbe0b77f5a946d1f283674385dbbea62e0ca2e98c72",
+      "transformed": true
+    },
+    {
+      "original": "deploy/qollab/main.css",
+      "imported": "components/quantum_duet/web/main.css",
+      "original_sha256": "3879598a08cadf49f726ed1cd6d8ef8941b2248d698f9a518ee8cecd9bf92d4d",
+      "imported_sha256": "3879598a08cadf49f726ed1cd6d8ef8941b2248d698f9a518ee8cecd9bf92d4d",
+      "transformed": true
+    },
+    {
+      "original": "deploy/qollab/ui.mjs",
+      "imported": "components/quantum_duet/web/ui.mjs",
+      "original_sha256": "5fb5cb2e86a948d0551d7966004ce2131ce44a267185c7084290f8f7b0aa3e7c",
+      "imported_sha256": "5fb5cb2e86a948d0551d7966004ce2131ce44a267185c7084290f8f7b0aa3e7c",
+      "transformed": true
+    },
+    {
+      "original": "deploy/qollab/LICENSE",
+      "imported": "components/quantum_duet/LICENSE",
+      "original_sha256": "dfc12da3130e82ee21d95304115523998a078a21737d367e986ac4b716902272",
+      "imported_sha256": "dfc12da3130e82ee21d95304115523998a078a21737d367e986ac4b716902272",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/SOURCE_NOTICES.md",
+      "imported": "components/quantum_duet/SOURCE_NOTICES.md",
+      "original_sha256": "e1d17a615ff6304ea361c14528ee999f8d2a5e0478a937caf7608ead48ff9b6b",
+      "imported_sha256": "e1d17a615ff6304ea361c14528ee999f8d2a5e0478a937caf7608ead48ff9b6b",
+      "transformed": false
+    },
+    {
+      "original": "deploy/qollab/DEPLOYMENT_NOTES.md",
+      "imported": "components/quantum_duet/DEPLOYMENT_NOTES.md",
+      "original_sha256": "c23056824e494ce6d3998531a91ea4d6fc98acf9b1e045f757c069819b6eecfa",
+      "imported_sha256": "c23056824e494ce6d3998531a91ea4d6fc98acf9b1e045f757c069819b6eecfa",
+      "transformed": false
+    },
+    {
+      "original": "scripts/extract_duet_exports.py",
+      "imported": "components/quantum_duet/tools/extract_duet_exports.py",
+      "original_sha256": "368e92e16514724083f29fa47e1b1f6bcc8d82e41ef4fe74a96127bab7e110cf",
+      "imported_sha256": "368e92e16514724083f29fa47e1b1f6bcc8d82e41ef4fe74a96127bab7e110cf",
+      "transformed": false
+    },
+    {
+      "original": "deliverables/milestone3b/qollab-local-run.json",
+      "imported": "components/quantum_duet/tests/fixtures/qollab-local-run.json",
+      "original_sha256": "e0993173a7d6619d03b4b35729a06fabb2a15b2883cc5f41d168f56840a63789",
+      "imported_sha256": "e0993173a7d6619d03b4b35729a06fabb2a15b2883cc5f41d168f56840a63789",
+      "transformed": false
+    },
+    {
+      "original": "artifacts/milestone2b/comparison.csv",
+      "imported": "components/quantum_duet/evidence/melody-comparison.csv",
+      "original_sha256": "66ea5218c78952df0245cc71e05a84e31396a542a7e529d8b5c9ba7ec1987e28",
+      "imported_sha256": "16e3490acf16a6f9e76b49cf5b94f5735e7d843727d00efe2b02a82664d9447f",
+      "transformed": true
+    },
+    {
+      "original": "artifacts/milestone2b/report.md",
+      "imported": "components/quantum_duet/evidence/melody-diagnostic.md",
+      "original_sha256": "48c8d11b3bd7ce2d026c5cc719e8ff53e53e4611065e642370ab5a6bde938342",
+      "imported_sha256": "b02ac2568b5b358e30ea93fa8fa90f02d5474422e879ff1795c71e0343e7dbb8",
+      "transformed": true
+    }
+  ],
+  "included": "Inference Python, source browser UI, selected 4/84-angle checkpoints, recorded four-motif base, one historical Qollab run, ten inference regressions, audio/MIDI JS checks, compact benchmark/history and notices",
+  "excluded": [
+    "Original .git (absent), environments/caches/editor state",
+    "All held-out motifs (not read), all datasets/corpus caches",
+    "Research training implementations and checkpoint histories",
+    "Full artifact directory, WAV/MIDI duplicates, screenshots and browser DOM/cookies",
+    "Original platform archive and generated manifests",
+    "Machine-specific report/CLI paths and private draft account URL"
+  ],
+  "copy_changes": [
+    "Python distribution namespace quantum_duet, JS bridge import renamed",
+    "Tests write no original artifacts; exhaustive legacy mapper check frozen as small reference fixture",
+    "CSV separators normalized; historical research reproduction section replaced with excluded-material boundary",
+    "Historical platform summary removes personal draft URL/consent/editor account details; numerical observations unchanged"
+  ],
+  "scientific_changes": "None: checkpoints, circuit/model definitions, local mapping, benchmark settings and conclusions preserved"
+}

@@ -1,0 +1,325 @@
+{
+  "source_sha256": "15ee64888dfb69f0fcee52fd4a64814767082e238e10f29893c92c7dbbd970f7",
+  "events": [
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 0,
+      "local_output": 0,
+      "pitch_midi": null,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": true
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 0,
+      "local_output": 0,
+      "pitch_midi": null,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": true
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 0,
+      "local_output": 1,
+      "pitch_midi": null,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": true
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 0,
+      "local_output": 1,
+      "pitch_midi": null,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": true
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 1,
+      "local_output": 0,
+      "pitch_midi": 72,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 1,
+      "local_output": 0,
+      "pitch_midi": 48,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 1,
+      "local_output": 1,
+      "pitch_midi": 74,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 1,
+      "local_output": 1,
+      "pitch_midi": 50,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 2,
+      "local_output": 0,
+      "pitch_midi": 74,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 2,
+      "local_output": 0,
+      "pitch_midi": 50,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 2,
+      "local_output": 1,
+      "pitch_midi": 76,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 2,
+      "local_output": 1,
+      "pitch_midi": 52,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 3,
+      "local_output": 0,
+      "pitch_midi": 76,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 3,
+      "local_output": 0,
+      "pitch_midi": 52,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 3,
+      "local_output": 1,
+      "pitch_midi": 77,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 3,
+      "local_output": 1,
+      "pitch_midi": 53,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 4,
+      "local_output": 0,
+      "pitch_midi": 77,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 4,
+      "local_output": 0,
+      "pitch_midi": 53,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 4,
+      "local_output": 1,
+      "pitch_midi": 79,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 4,
+      "local_output": 1,
+      "pitch_midi": 55,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 5,
+      "local_output": 0,
+      "pitch_midi": 79,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 5,
+      "local_output": 0,
+      "pitch_midi": 55,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 5,
+      "local_output": 1,
+      "pitch_midi": 81,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 5,
+      "local_output": 1,
+      "pitch_midi": 57,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 6,
+      "local_output": 0,
+      "pitch_midi": 81,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 6,
+      "local_output": 0,
+      "pitch_midi": 57,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 6,
+      "local_output": 1,
+      "pitch_midi": 83,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 6,
+      "local_output": 1,
+      "pitch_midi": 59,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 7,
+      "local_output": 0,
+      "pitch_midi": 83,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 7,
+      "local_output": 0,
+      "pitch_midi": 59,
+      "onset_beats": 0.0,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "alice",
+      "base_token": 7,
+      "local_output": 1,
+      "pitch_midi": 84,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    },
+    {
+      "round": 0,
+      "voice": "bob",
+      "base_token": 7,
+      "local_output": 1,
+      "pitch_midi": 60,
+      "onset_beats": 0.5,
+      "duration_beats": 0.4,
+      "rest": false
+    }
+  ]
+}
