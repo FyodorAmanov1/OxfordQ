@@ -25,4 +25,3 @@ def events_from_outputs(tokens, alice_outputs, bob_outputs):
     return [musical_event(token, output, voice, i)
             for voice, outputs in (("alice", alice_outputs), ("bob", bob_outputs))
             for i, (token, output) in enumerate(zip(tokens, outputs))]
-
