@@ -10,23 +10,40 @@ in the chat/PR metadata (a commit cannot include its own SHA).
 
 ## Outcome and limits
 
-Actual Qollab built-in and free IonQ single-circuit executions are **blocked** by
-browser control. The Chrome inventory exposed the authorized private draft, but
-binding its observed tab returned `Tab not found in browser 3`; binding its URL
-timed out waiting for CDP `Emulation.setFocusEmulationEnabled`. Recovery by the
-provider tab ID also returned `Tab not found`. These attempts preceded the clock
-observation 2026-10-10 15:47:24 UTC; their exact individual timestamps were not
-captured. No editor input or platform Run was issued. New actual platform job ID:
-null; counts: unavailable; accepted-job count: unknown, not guessed. This is an
-automation/access blocker, not an observed new backend rejection. No credentials
-were inspected or requested. The in-app browser could read public documentation
-but displayed Sign in, so it did not provide the established private draft access.
+The actual Qollab **single-circuit object path succeeds** on both visibly free
+backends. A separate human-approved private scratch project was created at
+[OxfordQ Worker A Private Bridge Probe](https://qollab.xyz/u/Floris/oxfordq-worker-a-private-bridg).
+The original duet draft was unchanged and neither project was published. Each
+execution used the supplied backend once, a named two-qubit H/CX/measurement
+circuit object and exactly 32 shots. Labels, success flags, two-bit measurement
+strings and integer totals were validated. Retained live observations are in
+`components/quantum_duet/tests/backend_a/fixtures/qollab-single-probes.json`.
 
-The required smallest actual test was attempted before implementation and before
-any proposed remote four/five-circuit path. No larger remote run was attempted.
-Historical four/five HTTP400 evidence remains historical; the single-circuit
-IonQ boundary remains untested. No supported app-level fix is claimed. A reviewable
-single-circuit diagnostic and precise maintainer reproduction are ready below.
+- Built-in: 16:11:49.998–16:11:50.146 UTC, job
+  `30b5a853-75b9-4c91-b94c-53403f612fed`, counts `00:25,11:7`.
+- Free IonQ Aria 1 simulator: 16:12:38.228–16:12:54.141 UTC, job
+  `01a12696-88b0-73ab-ba43-b919b1180b11`, counts `00:18,11:14`.
+  Actual runtime: Python 3.14.2, Qiskit 2.5.2, qiskit-ionq **1.0.2**, NumPy 2.4.6;
+  backend `qiskit_ionq.ionq_backend.IonQSimulatorBackend`, name `ionq_simulator`.
+  Sanitized actual SDK serialization: `type=ionq.circuit.v1`, `shots=32`,
+  input keys `circuit,gateset,qubits`, width 2. Pyodide/Qollab distribution metadata
+  was unavailable. Actual proxy/API routing is still unknown; no client credentials
+  or headers were read. The SDK 1.0.2 default v0.4 URL is not proof of proxy routing.
+
+Earlier browser binding failures (before 15:47:24 UTC) blocked the initial attempt;
+a fresh authenticated Chrome tab recovered access after the first implementation
+commit. ZIP upload then failed because Chrome file-URL access was disabled. Rather
+than change browser permissions, the editor received a reviewed standalone Python
+probe and JS `callPromising` entry under A's new test fixtures. This reproduces the
+canonical probe's single circuit and validation without importing the full duet
+package; it is **not** an actual deployment test of the canonical package.
+
+No larger remote run was attempted: a supported multi-circuit schema has not been
+confirmed, and historical four/five HTTP400 remains relevant. Both actual single
+probes now precede any proposed larger remote test. No supported multi-circuit
+app-level fix is claimed. The remaining boundary is list serialization/provider
+or platform support, not a universal single-circuit failure. A precise maintainer
+reproduction is ready below; it has not been sent.
 
 ## Changes (exact ownership scope)
 
@@ -51,6 +68,14 @@ single-circuit diagnostic and precise maintainer reproduction are ready below.
 - `components/quantum_duet/tests/backend_a/test_bridge.py`: 39 local/mocked cases.
 - `components/quantum_duet/tests/backend_a/test_ionq_serialization.py`: 7 real-SDK,
   intercepted-HTTP checks; optional SDK missing means explicitly skipped module.
+- `components/quantum_duet/tests/backend_a/test_scratch_probe.py`: two local checks
+  for the separate reproduction's single submission/count validation and redacted
+  failure with no retry or counts.
+- `components/quantum_duet/tests/backend_a/fixtures/probe.py` and `main.js`: reviewed
+  standalone private Qollab reproduction, pasted through the editor; production
+  web files were not changed.
+- `components/quantum_duet/tests/backend_a/fixtures/qollab-single-probes.json`:
+  retained actual observations, selection, versions, IDs and counts; no credentials.
 - `docs/team/results/worker-a.md`: this report and reproduction; no message sent.
 
 `generate_take` signature/raw take schema is unchanged. No shared envelope/schema,
@@ -90,14 +115,18 @@ other retriable HTTP errors; this app adds no retry and does not modify SDK inte
 The historical rejection of multi-circuit requests is consistent with a job-type
 compatibility issue, but this is still an inference. Circuit count alone is not
 established as causal. Merely relabelling multi-circuit JSON or splitting it into
-multiple jobs is not a verified supported fix and was not implemented. Actual
-Qollab Python/Qiskit/qiskit-ionq/Pyodide versions, API route/proxy boundary and free
-simulator identity still require the blocked single-circuit run.
+multiple jobs is not a verified supported fix and was not implemented.
+Qollab's observed qiskit-ionq 1.0.2 was subsequently installed into an isolated,
+ignored target directory. The same seven intercepted serialization/HTTP checks
+passed (2.40s), with no network job/account creation. Its serializer has the same
+object/list type selection; its default API base is `https://api.ionq.co/v0.4`.
+Actual Qollab single-object serialization and simulator identity were verified as
+above; actual API route/proxy boundary and supported list requests remain unknown.
 
 ## Newly executed verification
 
 All listed times are **UTC, 2026-10-10** (Europe/London was UTC+1). Test results
-below are local or mocked; none are fresh Qollab/IonQ execution evidence.
+below distinguish local/mocked checks from fresh actual Qollab execution evidence.
 
 Environment: Python 3.13.5, Qiskit 2.5.2, NumPy 2.5.3, pytest 9.1.1,
 qiskit-ionq 1.1.1; Node 16.13.2. `.venv-worker` was newly created. Initial
@@ -120,9 +149,15 @@ noneditable from the final canonical source before full-suite/CLI verification.
 | `.venv-worker/Scripts/python.exe components/quantum_duet/tools/build_qollab.py --out components/quantum_duet/build/worker-a-check` | 15:54:28.953–15:54:29.786 passed; fresh ignored output, ZIP SHA256 `5aa45e6ba01eaaad0fdde768e20faad8b095aa5a515bfab5a93b63abe0293f5c`. |
 | Installed local BasicSimulator `probe_json(...,32)` | 15:54:49.132–15:54:49.310; one submit, job `4667ad6e-e085-4631-88e7-1426f5a14542`, counts `11:21,00:11`. LOCAL ONLY. |
 | Generated namespace local BasicSimulator `probe_json(...,32)` (build path prepended to sys.path) | 15:54:52.203–15:54:52.377; one submit, job `af5a6346-e005-4782-8fe5-2bc74b737044`, counts `11:16,00:16`. LOCAL ONLY. |
-| Actual Qollab built-in single probe | Blocked; no new run, job/counts unavailable. Historical success unchanged. |
-| Actual free IonQ single probe and four/five paths | Blocked/unexecuted; no new rejection/acceptance or provider counts. Historical four/five HTTP400 unchanged. |
-| `git diff --check` / scope review | Passed; only seven allowlisted canonical paths. Generated outputs and environment excluded. |
+| Actual Qollab built-in single standalone probe | 16:11:49.998–16:11:50.146; completed, 32 shots, ID/counts above. Python 3.14.2/Qiskit 2.5.2/NumPy 2.4.6; IonQ distribution unavailable on this backend. |
+| Actual free IonQ single standalone probe | 16:12:38.228–16:12:54.141; completed, 32 shots, ID/counts and SDK 1.0.2 above. No retry or fallback. |
+| Actual remote four/five paths | Unexecuted: supported list schema not confirmed. Historical four/five HTTP400 unchanged. |
+| Final assigned paths plus scratch tests (`--basetemp .test-a-final`) | Completed before 16:12:15 observation; 51 passed in 10.54s, no skips. Exact start/end not captured. |
+| Repeated exact assigned command with `--basetemp .test-a` | 51 passed in 8.14s, no skips; after scratch additions, before final commit. Exact start/end not captured. |
+| Final common suite plus scratch tests (`--basetemp .test-worker-final`) | Completed before 16:13:28 observation; 80 passed in 13.25s, no skips. Exact start/end not captured. |
+| Final Node UI check | 16:13:28.844 passed; same mocked audio/MIDI scope. |
+| SDK 1.0.2 serialization suite, isolated target on PYTHONPATH | 7 passed in 2.40s; intercepted synthetic HTTP, not a remote batch. |
+| `git diff --check` / scope review | Passed; only allowlisted canonical paths. Generated outputs and environment excluded. |
 
 Local/mocked tests cover invalid allocations and hardware before submit, unchanged
 backend options, submission/result failure stages and accepted job retention,
@@ -134,11 +169,11 @@ musical quality, or show computational speedup. No CHSH replays are new trials.
 
 ## Manual platform reproduction and coordinator dependencies
 
-1. Review the generated diagnostic source, then use an authorized **private**
-   scratch JS/Qiskit run with the canonical `quantum_duet` Python files (or have
-   the coordinator prepare a diagnostic entry point). Do not change/publish the
-   production duet project. Body-only `index.html` can contain `<pre id="probe"></pre>`.
-   Diagnostic `main.js`, proposed here only (outside A's write ownership):
+1. Review the standalone reproduction in A's `tests/backend_a/fixtures/`.
+   It has now run in the authorized private scratch project. To test the actual
+   canonical package separately, the coordinator can prepare a generated upload
+   with body-only `index.html` containing `<pre id="probe"></pre>` and this diagnostic
+   `main.js` (production web changes are outside A's write ownership):
 
    ```javascript
    import * as diagnostic from 'quantum_duet.probe';
@@ -159,18 +194,20 @@ musical quality, or show computational speedup. No CHSH replays are new trials.
    results and integer allocations; unknown representation stays an error.
 
 Maintainer reproduction to review, **not sent**: single object versus named list
-serialization differs as above in SDK 1.1.1. Historical private platform batches
+serialization differs as above in SDK 1.0.2 (actual runtime) and 1.1.1. The actual
+single-object job succeeded at 32 shots; IDs/counts are retained above. Historical private platform batches
 failed before an accepted ID with HTTP400 `Only job type ionq.circuit.v1 is supported`.
 Qollab's public runtime asks for one job containing every needed circuit. Please
-identify the actual installed SDK/version, proxy API version/path and supported
-single-job multi-circuit schema, then reproduce the two-qubit/32-shot single
-probe first. An app fix needs supported request/result handling and verified
+identify the proxy API version/path and supported single-job multi-circuit schema.
+An app fix needs supported request/result handling and verified
 integer named counts, rather than a forced type field or multiple jobs.
 
 Coordinator owns any shared dependency pin (optional SDK 1.1.1 was installed only
 for this offline investigation), diagnostic web entry/upload changes, proxy/vendor
-compatibility decision, actual platform verification and final B/C integration.
+compatibility decision, canonical-package platform verification and final B/C integration.
 Standard declared dependencies run the local checks; the SDK module explicitly
 skips if that optional investigation dependency is missing. No out-of-scope diff
 was applied. Publication, maintainer contact, submission and merging remain human
-actions. Browser execution is the remaining unresolved acceptance limitation.
+actions. A supported actual four/five-circuit path and proxy routing are the remaining
+unresolved compatibility limitations; the smallest free single-circuit acceptance
+has been verified. No unsupported type override or multi-job workaround was added.
