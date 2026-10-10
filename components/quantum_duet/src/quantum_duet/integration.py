@@ -48,7 +48,8 @@ def backend_limits(backend, shots, circuit_count, qubits):
         raise RuntimeError('Physical hardware is disabled for this milestone; select a free simulator')
     name = getattr(backend, 'name', '')
     name = name() if callable(name) else name
-    if 'ionq' in type(backend).__module__.lower() and 'simulator' not in str(name).lower():
+    ionq_backend = any('ionq' in cls.__module__.lower() for cls in type(backend).__mro__)
+    if ionq_backend and 'simulator' not in str(name).lower():
         raise RuntimeError('IonQ physical/unknown device disabled; select a free IonQ simulator')
     maximum = getattr(configuration, 'max_shots', None)
     max_circuits = getattr(backend, 'max_circuits', None)
