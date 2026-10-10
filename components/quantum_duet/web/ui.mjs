@@ -1,3 +1,4 @@
+import {freezeJSON, envelopeView, arrangedPlayback, exportEnvelope, readEnvelope} from './run-contract.mjs';
 const $ = id => document.getElementById(id);
 const percent = x => (x * 100).toFixed(2) + '%';
 const noteName = pitch => pitch === null ? 'rest' : ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'][pitch%12] + (Math.floor(pitch/12)-1);
@@ -16,22 +17,29 @@ export function assertTake(take) {
 }
 
 // Standard MIDI type 1, 480 ticks/beat, conductor and two separate voices.
-export function midiBytes(events, bpm) {
+export function midiBytes(events, bpm, identity = null) {
+  if(!Number.isFinite(bpm)||bpm<=0||bpm>400||Math.round(60000000/bpm)>0xffffff)throw Error('Invalid MIDI tempo');
   const u32 = n => [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255];
   const vlq = n => { let b=[n&127]; while(n>>=7)b.unshift((n&127)|128); return b; };
   const chunk = (name, bytes) => [...Array.from(name,c=>c.charCodeAt(0)),...u32(bytes.length),...bytes];
+  const metadata = value => {const bytes=Array.from(new TextEncoder().encode(value));return [0,255,1,...vlq(bytes.length),...bytes];};
   const tempo = Math.round(60000000/bpm);
-  const conductor = [0,255,81,3,(tempo>>>16)&255,(tempo>>>8)&255,tempo&255,0,255,88,4,4,2,24,8,...vlq(7680),255,47,0];
+  const conductor = [...(identity?metadata(JSON.stringify(identity)):[]),0,255,81,3,(tempo>>>16)&255,(tempo>>>8)&255,tempo&255,0,255,88,4,4,2,24,8,...vlq(7680),255,47,0];
   const tracks = [chunk('MTrk',conductor)];
   ['alice','bob'].forEach((voice,channel)=>{
     const label=Array.from(voice,c=>c.charCodeAt(0));
-    let bytes=[0,255,3,label.length,...label,0,192+channel,channel?32:73], tick=0;
+    let bytes=[0,255,3,label.length,...label,0,192+channel,channel?41:73], tick=0;
     const scheduled=[];
     for(const e of events.filter(e=>e.voice===voice&&!e.rest)) {
+      if(!Number.isInteger(e.pitch_midi)||e.pitch_midi<0||e.pitch_midi>127||!Number.isFinite(e.onset_beats)||e.onset_beats<0||!Number.isFinite(e.duration_beats)||e.duration_beats<=0||e.onset_beats+e.duration_beats>16)throw Error('Invalid MIDI event');
+      const velocity=e.velocity??80;
+      if(!Number.isInteger(velocity)||velocity<1||velocity>127)throw Error('Invalid MIDI velocity');
       const start=Math.round(e.onset_beats*480),end=start+Math.round(e.duration_beats*480);
-      scheduled.push([start,[144+channel,e.pitch_midi,80]],[end,[128+channel,e.pitch_midi,0]]);
+      if(end<=start||end>7680)throw Error('Invalid MIDI tick timing');
+      if(identity)bytes.push(...metadata(JSON.stringify({event_id:e.event_id,round_id:e.round_id,voice:e.voice,pitch_midi:e.pitch_midi,velocity,start_tick:start,end_tick:end,source_event_ids:e.source_event_ids})));
+      scheduled.push([start,[144+channel,e.pitch_midi,velocity]],[end,[128+channel,e.pitch_midi,0]]);
     }
-    scheduled.sort((a,b)=>a[0]-b[0]);
+    scheduled.sort((a,b)=>a[0]-b[0] || a[1][0]-b[1][0]);
     for(const [at,msg] of scheduled){bytes.push(...vlq(at-tick),...msg);tick=at;}
     bytes.push(...vlq(7680-tick),255,47,0); tracks.push(chunk('MTrk',bytes));
   });
@@ -70,8 +78,9 @@ export class DuetAudio {
       osc.setPeriodicWave(ctx.createPeriodicWave(real,imag,{disableNormalization:true}));
       osc.frequency.value=440*2**((e.pitch_midi-69)/12);
       const at=start+e.onset_beats*beat,duration=e.duration_beats*beat;
-      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.18,at+.01);
-      gain.gain.setValueAtTime(.18,at+duration-.03);gain.gain.linearRampToValueAtTime(0,at+duration);
+      const level=.18*(e.velocity??80)/80,attack=Math.min(.01,duration/4),release=Math.min(.03,duration/4);
+      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(level,at+attack);
+      gain.gain.setValueAtTime(level,at+duration-release);gain.gain.linearRampToValueAtTime(0,at+duration);
       osc.connect(gain);gain.connect(this.voices[e.voice]);osc.start(at);osc.stop(at+duration);
       this.nodes.push({osc,gain});
     }
@@ -100,22 +109,23 @@ function download(name,type,body) {
   window.setTimeout(()=>URL.revokeObjectURL(url),10000);
 }
 
-export function mountDuet(run, environment) {
-  let take=null,requested=false;
+export function mountDuet(run, environment, options = {}) {
+  let take=null,requested=false,envelope=null,rawText=null,arranged=null,loading=false,closed=false;
   let finish;
   const generated = new Promise(resolve => { finish = resolve; });
   const method=()=>$('method').value;
-  const tempo=()=>{const n=Number($('tempo').value);if(!Number.isFinite(n)||n<60||n>180)throw Error('Tempo must be 60..180 BPM');return n;};
+  const events=()=> $('music-mode').value === 'arranged' ? arranged[method()] : take.events[method()];
+  const tempo=()=>{const n=Number($('tempo').value);if(!Number.isFinite(n)||n<=0||n>400)throw Error('Tempo must be greater than 0 and at most 400 BPM');return n;};
   const frame=position=>{
     if(!take)return;
     const i=Math.min(15,Math.floor(position)),r=take.rounds[method()][i];
     for(const voice of ['alice','bob']) {
       const lane=$(voice+'-lane');
       lane.querySelector('.playhead').style.left=(100*position/16)+'%';
-      lane.querySelectorAll('.note').forEach((node,j)=>node.classList.toggle('active',j===i));
+      lane.querySelectorAll('.note').forEach(node=>node.classList.toggle('active',Number(node.dataset.round)===i));
     }
     const a=take.events[method()].find(e=>e.round===i&&e.voice==='alice'),b=take.events[method()].find(e=>e.round===i&&e.voice==='bob');
-    $('round').textContent=`Round ${i+1}/16 · x=${r.x}, y=${r.y}, a=${r.a}, b=${r.b} · required parity ${r.required_parity} · ${r.win?'rule satisfied':'rule not satisfied'} | Alice ${noteName(a.pitch_midi)} @ ${a.onset_beats.toFixed(1)} beats · Bob ${noteName(b.pitch_midi)} @ ${b.onset_beats.toFixed(1)} beats`;
+    $('round').textContent=`${r.round_id || 'Legacy round '+(i+1)} · x=${r.x}, y=${r.y}, a=${r.a}, b=${r.b} · required parity ${r.required_parity} · ${r.win?'rule satisfied':'rule not satisfied'} | Raw Alice ${noteName(a.pitch_midi)} @ ${a.onset_beats.toFixed(1)} beats · Bob ${noteName(b.pitch_midi)} @ ${b.onset_beats.toFixed(1)} beats`;
   };
   const audio=new DuetAudio(frame,(state,n)=>{
     $('playback-status').textContent=`${state} · ${n} scheduled voice notes · existing take replay`;
@@ -125,56 +135,107 @@ export function mountDuet(run, environment) {
     if(!take)return;
     for(const voice of ['alice','bob']) {
       const lane=$(voice+'-lane');lane.replaceChildren();
-      for(const e of take.events[method()].filter(e=>e.voice===voice)){
+      for(const e of events().filter(e=>e.voice===voice)){
         const cell=document.createElement('span');cell.className='note'+(e.rest?' rest':'');
-        cell.textContent=noteName(e.pitch_midi);cell.title=`Round ${e.round+1}: token ${e.base_token}, output ${e.local_output}, ${e.onset_beats} beats`;
+        cell.dataset.round=String(e.round??envelope.rounds.findIndex(r=>r.round_id===e.round_id));
+        cell.textContent=noteName(e.pitch_midi);cell.title=`${e.round_id || 'Round '+(e.round+1)}: token ${e.base_token??'arranged'}, output ${e.local_output??'arranged'}, ${e.onset_beats} beats`;
+        cell.style.gridColumn=String(Number(cell.dataset.round)+1);
         cell.style.transform=`translateY(${e.rest?0:(voice==='alice'?78:54)-e.pitch_midi}px)`;lane.append(cell);
       }
       const head=document.createElement('span');head.className='playhead';lane.append(head);
-      lane.setAttribute('aria-label',`${voice} notes: `+take.events[method()].filter(e=>e.voice===voice).map(e=>`${e.round+1} ${noteName(e.pitch_midi)}`).join(', '));
+      lane.setAttribute('aria-label',`${voice} notes: `+events().filter(e=>e.voice===voice).map(e=>`${e.round_id || e.round+1} ${noteName(e.pitch_midi)}`).join(', '));
     }
     const q=take.excerpt.quantum,c=take.excerpt.classical;
     $('excerpt').textContent=`16-round excerpt: quantum ${q.wins}/16, local classical ${c.wins}/16. Every round retained, including rests. These scores are not the full batch estimate.`;
     frame(0);
   };
   $('environment').textContent=environment;
+  const controls = enabled => {for(const id of ['play','stop','midi','json'])$(id).disabled=!enabled;};
+  const reportError = error => {
+    audio.stop();take=null;envelope=null;arranged=null;rawText=null;controls(false);
+    $('music-mode').value='raw';$('music-mode').options[1].disabled=true;
+    $('status').dataset.error='true';$('status').textContent=`Result failed: ${error.message}. No fallback or automatic retry.`;
+    for(const id of ['alice-lane','bob-lane'])$(id).replaceChildren();
+    $('estimate').textContent='—';$('interval').textContent='No successful result';$('evidence-origin').textContent='Failed / unavailable';
+    $('allocation').textContent='No successful counts displayed';$('melody-origin').textContent='Unavailable';$('round').textContent='No playable result';
+    $('provenance').textContent=error.message;$('music-provenance').textContent='Raw / arranged playback unavailable';$('export-panel').hidden=true;
+  };
+  const install = (value, fixtureLabel = '') => {
+    audio.stop();const supplied=readEnvelope(value);rawText=supplied.rawText;
+    const parsed=supplied.result;envelope=null;arranged=null;
+    if(parsed.contract_version!==undefined) {
+      take=envelopeView(parsed);envelope=freezeJSON(parsed);
+    } else {
+      take=assertTake(parsed);freezeJSON(take);
+    }
+    $('music-mode').value='raw';const option=$('music-mode').options[1];option.disabled=true;option.textContent='Arranged · unavailable';
+    let arrangedMessage='Arranged unavailable: no supplied output.';
+    if(envelope?.arranged) {
+      try {arranged=arrangedPlayback(envelope);option.disabled=false;option.textContent='Arranged · supplied output';arrangedMessage='Arranged supplied and validated for paired playback.';}
+      catch(error){arrangedMessage=error.message;}
+    }
+    const stats=take.statistics,execution=take.execution;
+    $('tempo').value=String(envelope?.tempo_bpm??120);
+    $('estimate').textContent=percent(stats.expected_success);
+    $('quantum-reference').textContent=percent(take.references.quantum_exact);
+    $('interval').textContent=`${stats.interval_method}: ${percent(stats.success_interval[0])}–${percent(stats.success_interval[1])}`;
+    const origin=envelope?execution.data_status.toUpperCase():'LIVE legacy take';
+    $('allocation').textContent=`${stats.total_independent_shots.toLocaleString()} ${envelope?.execution.data_status==='recorded'?'historical':'returned'} CHSH shots · ${stats.shots_per_setting} per setting. QCBM/excerpt excluded. Conditional independence assumed; not hardware-certified.`;
+    $('evidence-origin').textContent=`${origin} · all CHSH counts`;
+    $('melody-origin').textContent=envelope?`${origin} · ${execution.mode}`:take.base_melody.generated_now?'Current-run QCBM melody':'Recorded M3A QCBM melody';
+    $('angles').textContent='Trained angles [A0, A1, B0, B1] in radians: '+take.models.bell_angles_radians.map(x=>x.toFixed(6)).join(', ');
+    $('status').dataset.error='false';
+    $('status').textContent=envelope?`${origin} ${fixtureLabel} · ${execution.backend_name} · run ${envelope.run_id} · ${execution.backend_run_calls_this_replay} backend calls this replay / zero new shots from loading. Historical/original calls ${execution.backend_run_calls}. Counts order reconstructed.`:`LIVE legacy take · ${execution.backend_name} · ${execution.execution_mode} · ${execution.circuit_count} circuits / one job. Job ${execution.job_id}. Run/round envelope integration pending.`;
+    $('provenance').textContent=JSON.stringify(envelope?{run_id:envelope.run_id,execution:{...execution,experiments:undefined},models:envelope.models,raw_source:envelope.raw_source,errors:envelope.errors,fallback:envelope.fallback,arranged:envelope.arranged?{...envelope.arranged,events:undefined}:null}:{execution,models:take.models,identity:'Legacy bridge has no shared envelope; original JSON retained'},null,2);
+    const provenance=()=>{$('music-provenance').textContent=$('music-mode').value==='raw'?`RAW · direct local mapping, central arranger bypassed. ${arrangedMessage}`:`ARRANGED · ${envelope.arranged.actual_backend} · transforms ${envelope.arranged.transformation_ids.join(', ')} · immutable raw source ${envelope.raw_source.sha256}. CHSH evidence refers to raw source.`;};
+    $('music-mode').onchange=()=>{audio.stop();provenance();draw();};provenance();
+    $('export-panel').hidden=true;controls(true);draw();
+    console.log(JSON.stringify({event:'take-loaded',run_id:envelope?.run_id,execution:execution,statistics:stats}));
+  };
+  const load=async (loader, label='')=>{
+    if(loading||closed)return;
+    loading=true;audio.stop();controls(false);$('fixture').disabled=true;$('import-result').disabled=true;
+    const generateDisabled=$('generate').disabled;$('generate').disabled=true;
+    try{const value=await loader();if(!closed)install(value,label);}catch(error){if(!closed)reportError(error);}
+    finally{loading=false;$('fixture').disabled=false;$('import-result').disabled=false;$('generate').disabled=generateDisabled;}
+  };
+  $('fixture').onclick=()=>load(()=>{
+    if(!options.loadFixture)throw Error(options.fixtureUnavailable||'Recorded fixture loader unavailable');
+    return options.loadFixture();
+  },'Qollab built-in simulator fixture');
+  $('import-result').onclick=()=>load(()=>{
+    const text=$('import-payload').value;
+    if(!readEnvelope(text).result.contract_version)throw Error('A qm.run-result envelope is required');
+    return text;
+  });
   $('generate').onclick=async()=>{
-    if(requested)return;
+    if(requested||loading||closed)return;
     const shots=Number($('shots').value);
     if(!Number.isInteger(shots)||shots<16||shots>4096){$('status').textContent='Shots must be an integer from 16 to 4096.';return;}
     requested=true;
+    loading=true;audio.stop();controls(false);$('fixture').disabled=true;$('import-result').disabled=true;
     for(const id of ['generate','batch','shots','execution-type'])$(id).disabled=true;
     $('status').textContent='Running one inference job…';
     try {
-      take=assertTake(await run({shots,mode:$('batch').value,executionType:$('execution-type').value}));
-      const stats=take.statistics;
-      $('estimate').textContent=percent(stats.expected_success);
-      $('quantum-reference').textContent=percent(take.references.quantum_exact);
-      $('interval').textContent=`95% Hoeffding: ${percent(stats.success_interval[0])}–${percent(stats.success_interval[1])}`;
-      $('allocation').textContent=`${stats.total_independent_shots.toLocaleString()} CHSH shots · ${stats.shots_per_setting} per setting · fixed equal allocation. Conditional independence assumed; not hardware-certified.`;
-      $('melody-origin').textContent=take.base_melody.generated_now?'Current-run QCBM melody':'Recorded M3A QCBM melody';
-      $('angles').textContent='Trained angles [A0, A1, B0, B1] in radians: '+take.models.bell_angles_radians.map(x=>x.toFixed(6)).join(', ');
-      $('status').textContent=`Take loaded · ${take.execution.backend_name} · ${take.execution.execution_mode} · ${take.execution.circuit_count} circuits / one job. Playback order reconstructed from counts. Job ${take.execution.job_id}`;
-      for(const id of ['play','stop','midi','json'])$(id).disabled=false;
-      draw();console.log(JSON.stringify({event:'take-loaded',execution:take.execution,statistics:stats}));
+      const value=await run({shots,mode:$('batch').value,executionType:$('execution-type').value});
+      if(!closed)install(value);
     } catch(error) {
-      take=null;$('status').textContent=`Backend failed: ${error.message}. No fallback or second job. Use Qollab Stop → Run for an explicitly selected new run.`;
+      reportError(error);
       console.error($('status').textContent);
-    }
+    } finally {loading=false;$('fixture').disabled=false;$('import-result').disabled=false;}
   };
   $('play').onclick=async()=>{
     if(!take)return;
-    try{await audio.play(take.events[method()],tempo(),{alice:$('mute-alice').checked,bob:$('mute-bob').checked});}
+    try{await audio.play(events(),tempo(),{alice:$('mute-alice').checked,bob:$('mute-bob').checked});}
     catch(error){audio.stop();$('playback-status').textContent='Audio failed: '+error.message;}
   };
   $('stop').onclick=()=>{audio.stop();frame(0);};
   $('method').onchange=()=>{audio.stop();draw();};
   $('tempo').onchange=()=>{audio.stop();frame(0);};
   for(const voice of ['alice','bob'])$('mute-'+voice).onchange=()=>audio.mute(voice,$('mute-'+voice).checked);
-  $('midi').onclick=()=>{try{download(`quantum-duet-${method()}.mid`,'audio/midi',midiBytes(take.events[method()],tempo()));}catch(error){$('playback-status').textContent=error.message;}};
-  $('json').onclick=()=>download('quantum-duet-run.json','application/json',JSON.stringify({ ...take,
-    export_view:{method:method(),tempo_bpm:Number($('tempo').value),mute_alice:$('mute-alice').checked,mute_bob:$('mute-bob').checked,experimental_shots_unchanged:true}},null,2));
-  window.addEventListener('pagehide',()=>{audio.stop();finish();});
+  $('midi').onclick=()=>{try{download(`quantum-duet-${$('music-mode').value}-${method()}.mid`,'audio/midi',midiBytes(events(),tempo(),envelope?{run_id:envelope.run_id,method:method(),mode:$('music-mode').value,raw_source:envelope.raw_source,round_ids:envelope.rounds.map(r=>r.round_id),transformation_ids:$('music-mode').value==='arranged'?envelope.arranged.transformation_ids:[]}:null));}catch(error){$('playback-status').textContent=error.message;}};
+  $('json').onclick=()=>download('quantum-duet-run.json','application/json',exportEnvelope(rawText,envelope||take,{method:method(),mode:$('music-mode').value,tempo_bpm:Number($('tempo').value),mute_alice:$('mute-alice').checked,mute_bob:$('mute-bob').checked}));
+  window.addEventListener('pagehide',()=>{closed=true;audio.stop();finish();});
   // Keep Qollab's Run alive for playback/export console messages until Stop.
   // The requested guard still permits exactly one backend call on this page.
   return generated;
