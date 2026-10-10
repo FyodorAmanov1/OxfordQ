@@ -1,0 +1,10 @@
+{
+  "bars": 16,
+  "window_bars": 4,
+  "backend": "gemini",
+  "model": "gemini-3.8-flash",
+  "key": "C major",
+  "chords": ["C", "Am", "F", "G"],
+  "edit_budget": 0.2,
+  "render_audio": true
+}

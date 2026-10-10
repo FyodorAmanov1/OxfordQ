@@ -1,0 +1,23 @@
+{
+  "lead_track": "flute",
+  "parts": [
+    {
+      "id": "flute",
+      "instrument": "flute",
+      "tempo_bpm": 96,
+      "notes": [
+        {"pitch": 76, "onset_beats": 0, "duration_beats": 1, "velocity": 90},
+        {"pitch": 79, "onset_beats": 1, "duration_beats": 1, "velocity": 90},
+        {"pitch": 81, "onset_beats": 2, "duration_beats": 1, "velocity": 90},
+        {"pitch": 79, "onset_beats": 3, "duration_beats": 1, "velocity": 90}
+      ]
+    },
+    {
+      "id": "cello",
+      "instrument": "cello",
+      "notes": [
+        {"pitch": 48, "onset_beats": 0, "duration_beats": 4, "velocity": 70}
+      ]
+    }
+  ]
+}

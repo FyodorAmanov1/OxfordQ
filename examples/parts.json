@@ -1,0 +1,149 @@
+{
+  "lead_track": "flute",
+  "parts": [
+    {
+      "id": "piccolo",
+      "instrument": "piccolo",
+      "path": "midi/piccolo.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "flute",
+      "instrument": "flute",
+      "path": "midi/flute.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "oboe",
+      "instrument": "oboe",
+      "path": "midi/oboe.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "clarinet",
+      "instrument": "clarinet",
+      "path": "midi/clarinet.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "bassoon",
+      "instrument": "bassoon",
+      "path": "midi/bassoon.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "horns",
+      "instrument": "horns",
+      "path": "midi/horns.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "trumpets",
+      "instrument": "trumpets",
+      "path": "midi/trumpets.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "trombones",
+      "instrument": "trombones",
+      "path": "midi/trombones.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "tuba",
+      "instrument": "tuba",
+      "path": "midi/tuba.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "violin_1",
+      "instrument": "violin_1",
+      "path": "midi/violin_1.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "violin_2",
+      "instrument": "violin_2",
+      "path": "midi/violin_2.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "viola",
+      "instrument": "viola",
+      "path": "midi/viola.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "cello",
+      "instrument": "cello",
+      "path": "midi/cello.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "double_bass",
+      "instrument": "double_bass",
+      "path": "midi/double_bass.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "timpani",
+      "instrument": "timpani",
+      "path": "midi/timpani.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    },
+    {
+      "id": "percussion",
+      "instrument": "percussion",
+      "path": "midi/percussion.mid",
+      "source": {
+        "generator": "deterministic synthetic example",
+        "backend": "classical fixture; not quantum hardware"
+      }
+    }
+  ]
+}

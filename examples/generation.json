@@ -1,0 +1,20 @@
+{
+  "lead_track": "theme",
+  "models": {
+    "flute-small": {
+      "factory": "orchestrator.generator_examples:DemoMelodyGenerator",
+      "kwargs": {"instrument": "flute"},
+      "source": {"model_version": "demo-1"}
+    },
+    "cello-small": {
+      "factory": "orchestrator.generator_examples:DemoBassGenerator",
+      "kwargs": {"instrument": "cello"},
+      "source": {"model_version": "demo-1"}
+    }
+  },
+  "routes": {"flute": "flute-small", "cello": "cello-small"},
+  "jobs": [
+    {"id": "theme", "instrument": "flute", "role": "melody", "seed": 17},
+    {"id": "bass", "instrument": "cello", "role": "bass", "seed": 23}
+  ]
+}
