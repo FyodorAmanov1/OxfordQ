@@ -1,3 +1,4 @@
+import {playbackProjection,validateSource} from './playback-projection.mjs';
 import {freezeJSON, envelopeView, arrangedPlayback, exportEnvelope, readEnvelope} from './run-contract.mjs';
 const $ = id => document.getElementById(id);
 const percent = x => (x * 100).toFixed(2) + '%';
@@ -110,8 +111,8 @@ function download(name,type,body) {
 }
 
 export function mountDuet(run, environment, options = {}) {
-  let take=null,requested=false,envelope=null,rawText=null,arranged=null,loading=false,closed=false;
-  let finish;
+  let take=null,requested=false,envelope=null,rawText=null,arranged=null,projection=null,sourceText=null,loading=false,closed=false;
+  let finish, updateMusicMode=()=>{};
   const generated = new Promise(resolve => { finish = resolve; });
   const method=()=>$('method').value;
   const events=()=> $('music-mode').value === 'arranged' ? arranged[method()] : take.events[method()];
@@ -160,19 +161,22 @@ export function mountDuet(run, environment, options = {}) {
     $('allocation').textContent='No successful counts displayed';$('melody-origin').textContent='Unavailable';$('round').textContent='No playable result';
     $('provenance').textContent=error.message;$('music-provenance').textContent='Raw / arranged playback unavailable';$('export-panel').hidden=true;
   };
-  const install = (value, fixtureLabel = '') => {
+  const install = async (value, fixtureLabel = '') => {
     audio.stop();const supplied=readEnvelope(value);rawText=supplied.rawText;
-    const parsed=supplied.result;envelope=null;arranged=null;
+    const parsed=supplied.result;envelope=null;arranged=null;projection=supplied.projection;sourceText=supplied.sourceText;
     if(parsed.contract_version!==undefined) {
-      take=envelopeView(parsed);envelope=freezeJSON(parsed);
+      take=envelopeView(parsed);envelope=freezeJSON(parsed);await validateSource(envelope,sourceText);
     } else {
       take=assertTake(parsed);freezeJSON(take);
     }
     $('music-mode').value='raw';const option=$('music-mode').options[1];option.disabled=true;option.textContent='Arranged · unavailable';
-    let arrangedMessage='Arranged unavailable: no supplied output.';
-    if(envelope?.arranged) {
+    let arrangedMessage=envelope?.status==='failed'?`Arrangement failed: ${envelope.errors.map(e=>`${e.stage}/${e.code}: ${e.message}`).join('; ')}`:'Arranged unavailable: no supplied output.';
+    if(projection) {
+      try {const validated=await playbackProjection(envelope,rawText,projection);arranged=validated.events;freezeJSON(projection);option.disabled=!validated.available;option.textContent='Arranged · local rules (per policy)';arrangedMessage=validated.errors.length?validated.errors.join('; '):'Separate creative rules output · zero new shots. Plan retained in projection provenance.';}
+      catch(error){arranged=null;arrangedMessage=error.message;}
+    } else if(envelope?.arranged) {
       try {arranged=arrangedPlayback(envelope);option.disabled=false;option.textContent='Arranged · supplied output';arrangedMessage='Arranged supplied and validated for paired playback.';}
-      catch(error){arrangedMessage=error.message;}
+      catch(error){arrangedMessage+=` ${error.message}`;}
     }
     const stats=take.statistics,execution=take.execution;
     $('tempo').value=String(envelope?.tempo_bpm??120);
@@ -186,19 +190,47 @@ export function mountDuet(run, environment, options = {}) {
     $('angles').textContent='Trained angles [A0, A1, B0, B1] in radians: '+take.models.bell_angles_radians.map(x=>x.toFixed(6)).join(', ');
     $('status').dataset.error='false';
     $('status').textContent=envelope?`${origin} ${fixtureLabel} · ${execution.backend_name} · run ${envelope.run_id} · ${execution.backend_run_calls_this_replay} backend calls this replay / zero new shots from loading. Historical/original calls ${execution.backend_run_calls}. Counts order reconstructed.`:`LIVE legacy take · ${execution.backend_name} · ${execution.execution_mode} · ${execution.circuit_count} circuits / one job. Job ${execution.job_id}. Run/round envelope integration pending.`;
-    $('provenance').textContent=JSON.stringify(envelope?{run_id:envelope.run_id,execution:{...execution,experiments:undefined},models:envelope.models,raw_source:envelope.raw_source,errors:envelope.errors,fallback:envelope.fallback,arranged:envelope.arranged?{...envelope.arranged,events:undefined}:null}:{execution,models:take.models,identity:'Legacy bridge has no shared envelope; original JSON retained'},null,2);
-    const provenance=()=>{$('music-provenance').textContent=$('music-mode').value==='raw'?`RAW · direct local mapping, central arranger bypassed. ${arrangedMessage}`:`ARRANGED · ${envelope.arranged.actual_backend} · transforms ${envelope.arranged.transformation_ids.join(', ')} · immutable raw source ${envelope.raw_source.sha256}. CHSH evidence refers to raw source.`;};
-    $('music-mode').onchange=()=>{audio.stop();provenance();draw();};provenance();
-    $('export-panel').hidden=true;controls(true);draw();
+    $('provenance').textContent=JSON.stringify(envelope?{run_id:envelope.run_id,execution:{...execution,experiments:undefined},models:envelope.models,raw_source:envelope.raw_source,errors:envelope.errors,fallback:envelope.fallback,playback_projection:projection,arranged:envelope.arranged?{...envelope.arranged,events:undefined}:null}:{execution,models:take.models,identity:'Legacy bridge has no shared envelope; original JSON retained'},null,2);
+    const provenance=()=>{
+      if($('music-mode').value==='raw') {
+        $('music-provenance').textContent=`RAW · direct local mapping, central arranger bypassed. ${arrangedMessage}`;
+      } else {
+        const a=projection?.policies[method()]??envelope.arranged;
+        const transforms=projection?a.transformation_ids.length:a.transformation_ids.join(', ');
+        $('music-provenance').textContent=`ARRANGED · ${a.actual_backend} · ${method()} · transforms ${transforms} · ${a.creative_plan?.key??'supplied creative plan'} · immutable raw source ${envelope.raw_source.sha256}. CHSH evidence refers to raw source.`;
+      }
+    };
+    updateMusicMode=()=>{
+      option.disabled=!arranged?.[method()];
+      if(option.disabled)$('music-mode').value='raw';
+      provenance();
+    };
+    $('music-mode').onchange=()=>{audio.stop();updateMusicMode();draw();};updateMusicMode();
+    $('export-panel').hidden=true;controls(true);if($('arrange'))$('arrange').disabled=!options.arrange||!envelope||envelope.status!=='completed';draw();
     console.log(JSON.stringify({event:'take-loaded',run_id:envelope?.run_id,execution:execution,statistics:stats}));
   };
   const load=async (loader, label='')=>{
     if(loading||closed)return;
     loading=true;audio.stop();controls(false);$('fixture').disabled=true;$('import-result').disabled=true;
     const generateDisabled=$('generate').disabled;$('generate').disabled=true;
-    try{const value=await loader();if(!closed)install(value,label);}catch(error){if(!closed)reportError(error);}
+    try{const value=await loader();if(!closed)await install(value,label);}catch(error){if(!closed)reportError(error);}
     finally{loading=false;$('fixture').disabled=false;$('import-result').disabled=false;$('generate').disabled=generateDisabled;}
   };
+  if($('arrange')) {
+    $('arrange').disabled=true;
+    $('arrange').onclick=async()=>{
+      if(loading||closed||!envelope||!options.arrange)return;
+      loading=true;audio.stop();$('arrange').disabled=true;controls(false);$('fixture').disabled=true;$('import-result').disabled=true;
+      const previousGenerate=$('generate').disabled;$('generate').disabled=true;
+      try {
+        const bundle=await options.arrange(rawText,sourceText), returned=readEnvelope(bundle);
+        if(returned.rawText!==rawText || returned.sourceText!==sourceText)throw Error('Arrangement response changed original evidence');
+        if(!closed)await install(bundle);
+      }
+      catch(error){controls(true);$('music-provenance').textContent=`Arrangement failed: ${error.message}. Existing RAW playback remains available.`;}
+      finally{loading=false;$('arrange').disabled=false;$('fixture').disabled=false;$('import-result').disabled=false;$('generate').disabled=previousGenerate;}
+    };
+  }
   $('fixture').onclick=()=>load(()=>{
     if(!options.loadFixture)throw Error(options.fixtureUnavailable||'Recorded fixture loader unavailable');
     return options.loadFixture();
@@ -218,7 +250,7 @@ export function mountDuet(run, environment, options = {}) {
     $('status').textContent='Running one inference job…';
     try {
       const value=await run({shots,mode:$('batch').value,executionType:$('execution-type').value});
-      if(!closed)install(value);
+      if(!closed)await install(value);
     } catch(error) {
       reportError(error);
       console.error($('status').textContent);
@@ -230,11 +262,11 @@ export function mountDuet(run, environment, options = {}) {
     catch(error){audio.stop();$('playback-status').textContent='Audio failed: '+error.message;}
   };
   $('stop').onclick=()=>{audio.stop();frame(0);};
-  $('method').onchange=()=>{audio.stop();draw();};
+  $('method').onchange=()=>{audio.stop();updateMusicMode();draw();};
   $('tempo').onchange=()=>{audio.stop();frame(0);};
   for(const voice of ['alice','bob'])$('mute-'+voice).onchange=()=>audio.mute(voice,$('mute-'+voice).checked);
-  $('midi').onclick=()=>{try{download(`quantum-duet-${$('music-mode').value}-${method()}.mid`,'audio/midi',midiBytes(events(),tempo(),envelope?{run_id:envelope.run_id,method:method(),mode:$('music-mode').value,raw_source:envelope.raw_source,round_ids:envelope.rounds.map(r=>r.round_id),transformation_ids:$('music-mode').value==='arranged'?envelope.arranged.transformation_ids:[]}:null));}catch(error){$('playback-status').textContent=error.message;}};
-  $('json').onclick=()=>download('quantum-duet-run.json','application/json',exportEnvelope(rawText,envelope||take,{method:method(),mode:$('music-mode').value,tempo_bpm:Number($('tempo').value),mute_alice:$('mute-alice').checked,mute_bob:$('mute-bob').checked}));
+  $('midi').onclick=()=>{try{download(`quantum-duet-${$('music-mode').value}-${method()}.mid`,'audio/midi',midiBytes(events(),tempo(),envelope?{run_id:envelope.run_id,method:method(),mode:$('music-mode').value,raw_source:envelope.raw_source,round_ids:envelope.rounds.map(r=>r.round_id),transformation_ids:$('music-mode').value==='arranged'?(projection?.policies[method()].transformation_ids??envelope.arranged.transformation_ids):[]}:null));}catch(error){$('playback-status').textContent=error.message;}};
+  $('json').onclick=()=>download('quantum-duet-run.json','application/json',exportEnvelope(rawText,envelope||take,{method:method(),mode:$('music-mode').value,tempo_bpm:Number($('tempo').value),mute_alice:$('mute-alice').checked,mute_bob:$('mute-bob').checked},projection,sourceText));
   window.addEventListener('pagehide',()=>{closed=true;audio.stop();finish();});
   // Keep Qollab's Run alive for playback/export console messages until Stop.
   // The requested guard still permits exactly one backend call on this page.
