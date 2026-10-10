@@ -47,7 +47,12 @@ def main():
     print("Resolved labels:")
     print(" -> ".join(harmony.resolved_sequence))
     print("\nChord symbols:")
-    print(" -> ".join(harmony.chord_symbols))
+    print(
+        " -> ".join(
+            symbol.replace("-", "b")
+            for symbol in harmony.chord_symbols
+        )
+    )
 
     harmony_json = out / "quantum_harmony.json"
     harmony_json.write_text(

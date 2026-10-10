@@ -59,6 +59,10 @@ class QuantumHarmonyResult:
             "coarse_sequence": self.coarse_sequence,
             "resolved_sequence": self.resolved_sequence,
             "chord_symbols": self.chord_symbols,
+            "display_chord_symbols": [
+                symbol.replace("-", "b")
+                for symbol in self.chord_symbols
+            ],
             "steps": [asdict(x) for x in self.steps],
             "source": self.source,
         }
@@ -211,8 +215,9 @@ def _degree_root_name(tonality, degree_token):
     else:
         root.accidental = m21pitch.Accidental(new_alter)
 
-    # music21 writes flats as "-", e.g. A-; convert to standard "b".
-    return root.name.replace("-", "b")
+    # Keep music21's internal flat notation ("A-" rather than "Ab").
+    # Human-readable conversion is done only when displaying the result.
+    return root.name
 
 
 def label_to_chord_symbol(label, key_name="C major"):
