@@ -48,3 +48,33 @@ The central program is classically simulatable. No musical-quality advantage or
 computational speedup is claimed; earlier classical melody models remain better.
 
 This effort is supported by Qollab & IonQ
+
+## Coordinator integration, 2026-10-10
+
+The generated Qollab upload deliberately provides RAW duet execution/playback and
+the unchanged RECORDED fixture. `quantum_duet.recorded_fixture.load_fixture` reads
+literal `data/run-result.v1.json` and `data/qollab-local-run.json` paths through
+the supported asynchronous Python bridge. It checks the source byte digest and
+requires recorded provenance/zero replay calls. No private repository fetch is used.
+
+Optional rules orchestration runs in the separate local CPython application with
+both repository packages installed. Its music21/pydantic/orchestrator dependencies
+have NOT been verified in the actual Qollab Pyodide runtime. The build excludes
+orchestration_adapter.py and browser_projection.py; it adds no orchestration
+dependencies to the working Qiskit/NumPy requirements. The platform's supplied
+backend and legacy generate_take API remain unchanged. A valid local creative
+playback sidecar may be imported, with its raw evidence retained separately.
+
+Worker A's standalone 32-shot probes succeeded on Qollab built-in and free IonQ
+Aria 1 simulators on 2026-10-10 UTC, with one accepted job each. Actual IonQ SDK
+was 1.0.2 and the accepted type was ionq.circuit.v1. This does not establish a
+supported four/five-circuit duet path or verify this canonical upload. Historical
+multi-circuit HTTP400 remains unresolved; no provider substitution is added.
+
+Current runtime documentation was read through Chrome on 2026-10-10:
+https://qollab.xyz/learn/docs/runtime-environment . Its limits are 100 files,
+2 MB per file, and 200 MB across the account. The builder enforces the per-project
+limits; account-wide capacity must be checked at upload. Full private canonical
+upload, recorded replay, built-in duet, sandbox exports and error verification
+remain required before separately authorized publication. Native platform
+downloads remain unverified; visible lossless JSON/base64 remains available.

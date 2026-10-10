@@ -23,8 +23,11 @@ export function validateEnvelope(result) {
   check(!result.fallback.used || result.fallback.requested && text(result.fallback.reason), 'Undeclared fallback');
   if (result.status === 'failed') {
     check(result.errors.length > 0, 'Failed result requires explicit errors');
-    check(!result.events || Object.values(result.events).every(events => events.length === 0), 'Failed result cannot contain successful events');
-    return result;
+    if (result.mode === 'raw') {
+      check(!result.events || Object.values(result.events).every(events => events.length === 0), 'Failed result cannot contain successful events');
+      return result;
+    }
+    check(result.errors.every(e=>e.stage==='arrangement'), 'Only arrangement failure may retain raw evidence');
   }
   check(finite(result.tempo_bpm) && result.tempo_bpm > 0 && result.tempo_bpm <= 400 && result.beats_per_bar === 4 && result.ppq === 480, 'Unsupported tempo/metre/ppq');
   check(hash(result.raw_source?.sha256) && hash(result.raw_source?.canonical_json_sha256) && text(result.raw_source.asset), 'Missing raw source identity');
@@ -50,6 +53,8 @@ export function validateEnvelope(result) {
       musicalEvent(e);
       check(Number.isInteger(e.round) && e.round >= 0 && e.round < 16 && e.run_id === result.run_id && e.round_id === result.rounds[e.round].round_id && text(e.event_id) && !ids.has(e.event_id), 'Invalid event lineage');
       check(e.base_token === result.rounds[e.round].base_token && e.local_output === result.rounds[e.round][method][e.voice], 'Event changed local mapping identity');
+      const index=e.base_token-1+e.local_output, expected=e.base_token===0?null:({alice:72,bob:48}[e.voice]+12*Math.floor(index/7)+[0,2,4,5,7,9,11][index%7]);
+      check(e.event_id===`${result.run_id}/${method}/${e.voice}/r${String(e.round).padStart(2,'0')}` && e.pitch_midi===expected && e.rest===(e.base_token===0) && e.onset_beats===e.round+e.local_output*0.5 && e.duration_beats===0.4, 'Raw event contradicts frozen local mapping');
       ids.add(e.event_id); pairs.add(`${e.voice}/${e.round}`);
     }
     check(pairs.size === 32, 'Duplicate/missing voice round');
@@ -74,14 +79,16 @@ export function validateEnvelope(result) {
 }
 
 export function readEnvelope(value) {
+  let projection=null,sourceText=null;
   let rawText=typeof value==='string'?value:JSON.stringify(value), result=JSON.parse(rawText);
   if(result.run_result) {
     check(typeof result.raw_envelope_text==='string', 'Missing original envelope text in export');
+    projection=result.playback_projection??null;sourceText=result.raw_source_text??null;
     const original=JSON.parse(result.raw_envelope_text);
     check(JSON.stringify(original)===JSON.stringify(result.run_result), 'Export result contradicts original envelope');
     rawText=result.raw_envelope_text;result=original;
   }
-  return {rawText,result};
+  return {rawText,result,projection,sourceText};
 }
 
 // Optional paired playback projection only: arranged.events.{quantum,classical}.
@@ -108,13 +115,13 @@ export function arrangedPlayback(result) {
 
 export function envelopeView(result) {
   validateEnvelope(result);
-  if (result.status === 'failed') throw Error(result.errors.map(e => `${e.stage}/${e.code}: ${e.message}`).join('; '));
+  if (result.status === 'failed' && result.mode === 'raw') throw Error(result.errors.map(e => `${e.stage}/${e.code}: ${e.message}`).join('; '));
   const rounds = {};
   for (const method of ['quantum','classical']) rounds[method] = result.rounds.map(r => ({x:r.cues.alice,y:r.cues.bob,a:r[method].alice,b:r[method].bob,required_parity:r.cues.alice*r.cues.bob,win:r[method].win,round_id:r.round_id}));
   return { ...result, rounds, excerpt:Object.fromEntries(['quantum','classical'].map(m => [m,{wins:rounds[m].filter(r => r.win).length}])) };
 }
 
-export function exportEnvelope(rawText, result, view) {
+export function exportEnvelope(rawText, result, view, projection=null, sourceText=null) {
   // Original text and parsed envelope stay intact, including arranged provenance.
-  return JSON.stringify({raw_envelope_text:rawText,run_result:result,export_view:{...view,experimental_shots_unchanged:true}},null,2);
+  return JSON.stringify({raw_envelope_text:rawText,run_result:result,playback_projection:projection,raw_source_text:sourceText,export_view:{...view,experimental_shots_unchanged:true}},null,2);
 }
