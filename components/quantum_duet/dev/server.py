@@ -6,9 +6,14 @@ from quantum_duet.integration import generate_take
 from quantum_duet.cli import __file__ as package_file
 from qiskit.providers.basic_provider import BasicSimulator
 ROOT=Path(__file__).resolve().parents[1]
+FIXTURE=ROOT.parents[1]/'docs/team/fixtures/run-result.v1.json'
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*args,**kwargs): super().__init__(*args,directory=str(ROOT),**kwargs)
     def do_GET(self):
+        if self.path=='/api/fixture':
+            # Fixed local asset only, never an unsupported Qollab/private fetch.
+            text=FIXTURE.read_bytes()
+            self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(text);return
         if self.path=='/':
             html='<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/web/main.css"></head><body>'+(ROOT/'web/index.html').read_text(encoding='utf-8')+'<script type="module" src="/dev/main.mjs"></script></body></html>'
             self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.end_headers();self.wfile.write(html.encode());return

@@ -4,6 +4,14 @@
   </header>
   <section class="setup" aria-label="Generate a take">
     <div class="controls">
+      <button id="fixture">Load RECORDED Qollab fixture · zero shots</button>
+    </div>
+    <details><summary>Load a supplied run-result envelope</summary>
+      <label>Run-result JSON<textarea id="import-payload" rows="4" spellcheck="false"></textarea></label>
+      <button id="import-result">Load JSON · no inference</button>
+      <p class="small">Paste an exported qm.run-result.v1 envelope. Optional arranged output is inspected separately; unsupported or failed output is reported explicitly.</p>
+    </details>
+    <div class="controls">
       <label>Inference batch<select id="batch"><option value="five-live">5 circuits · new QCBM melody</option><option value="four-recorded">4 circuits · recorded M3A melody</option></select></label>
       <label>Shots per circuit<input id="shots" type="number" min="16" max="4096" step="1" value="1024"></label>
       <label>Selected simulator type<select id="execution-type"><option value="selected-simulator-unverified">Type not confirmed</option><option value="ideal-simulator">Ideal simulator</option><option value="noisy-simulator">Noise-model simulator</option></select></label>
@@ -18,7 +26,7 @@
     <div class="metrics">
       <div><span>Exact trained quantum</span><strong id="quantum-reference">85.36%</strong><small>Ideal Bell-pair reference</small></div>
       <div><span>Local classical maximum</span><strong>75%</strong><small>Shared randomness allowed</small></div>
-      <div class="current"><span>Current run · all CHSH counts</span><strong id="estimate">—</strong><small id="interval">Waiting for a batch</small></div>
+      <div class="current"><span id="evidence-origin">No run loaded · all CHSH counts</span><strong id="estimate">—</strong><small id="interval">Waiting for a batch</small></div>
     </div>
     <p class="small" id="allocation">Every returned CHSH shot counts, including rounds mapped to rests.</p>
     <p class="central">With both cues available together, unrestricted centralized classical coordination can reach <b>100%</b>.</p>
@@ -28,24 +36,27 @@
     <div class="controls">
       <button id="play" class="primary" disabled>Play</button><button id="stop" disabled>Stop</button>
       <label>Comparison<select id="method"><option value="quantum">Quantum</option><option value="classical">Local classical</option></select></label>
-      <label>Tempo · BPM<input id="tempo" type="number" min="60" max="180" value="120"></label>
+      <label>Music mode<select id="music-mode"><option value="raw">Raw · direct local mapping</option><option value="arranged" disabled>Arranged · unavailable</option></select></label>
+      <label>Tempo · BPM<input id="tempo" type="number" min="1" max="400" value="120"></label>
       <label class="check"><input id="mute-alice" type="checkbox">Mute Alice</label>
       <label class="check"><input id="mute-bob" type="checkbox">Mute Bob</label>
     </div>
     <div id="score" class="score" aria-label="Two note lanes, four bars">
-      <div class="lane"><b>Alice · C5</b><div id="alice-lane" class="notes" role="img" aria-label="Alice note lane"></div></div>
-      <div class="lane"><b>Bob · C3</b><div id="bob-lane" class="notes" role="img" aria-label="Bob note lane"></div></div>
+      <div class="lane"><b>Alice · flute voice</b><div id="alice-lane" class="notes" role="img" aria-label="Alice note lane"></div></div>
+      <div class="lane"><b>Bob · cello voice</b><div id="bob-lane" class="notes" role="img" aria-label="Bob note lane"></div></div>
     </div>
     <p id="playback-status" role="status" aria-live="polite" data-active-nodes="0">Stopped · audio begins only after Play</p>
     <div class="round-card"><span class="eyebrow">CURRENT MUSICAL ROUND</span><p id="round">Generate a take to inspect x, y, a, b and the corresponding notes.</p></div>
     <p id="excerpt" class="small">The audible 16-round excerpt is separate from the full batch estimate.</p>
+    <p id="music-provenance" class="small">Raw playback bypasses central arrangement.</p>
+    <details><summary>Run, models, source and errors</summary><pre id="provenance">No provenance loaded.</pre></details>
     <div class="controls"><button id="midi" disabled>Export MIDI</button><button id="json" disabled>Export run JSON / provenance</button></div>
     <div id="export-panel" hidden>
       <p id="export-description"></p>
       <label for="export-payload">Export payload · select and copy</label>
       <textarea id="export-payload" readonly rows="5" style="width:100%;box-sizing:border-box"></textarea>
     </div>
-    <p class="small">MIDI includes both voices at the selected tempo. Mutes affect listening only.</p>
+    <p class="small">Both comparisons use the same flute/cello synthesis, gain, tempo and mute controls. MIDI includes both voices, velocities and identity metadata at the selected tempo. Mutes affect listening only. JSON retains the original envelope; exports add no shots.</p>
   </section>
   <details><summary>How the duet works · technical details & limits</summary>
     <p>A Bell state (|00⟩ + |11⟩)/√2 is freshly prepared. Four frozen, trained RY measurement angles select Alice's and Bob's local measurements. Each player's note uses only the pre-agreed score, timing and its own output. The referee checks a ⊕ b = x · y; it cannot correct, suppress or replace a voice's notes.</p>
