@@ -1,0 +1,145 @@
+{
+  "scope": "Historical observations from original project; NOT rerun after namespace/packaging adaptation",
+  "evidence": {
+    "private_draft": true,
+    "paid_hardware_used": false,
+    "published": false,
+    "hackathon_submitted": false,
+    "browser": "Authenticated user Chrome, successful JSPI/Pyodide bridge; exact browser version not captured",
+    "archive_hash_scope": "Manifest hashes describe ZIP bytes; editor insertion may normalize line endings",
+    "probe": {
+      "status": "passed",
+      "observed_utc": "2026-10-10T14:13:30.067465+00:00",
+      "backend": "basic_simulator",
+      "shots": 32,
+      "counts": {
+        "11": 20,
+        "00": 12
+      },
+      "job_id": "4cd97960-e925-41f3-8c01-33570e332c85",
+      "logs": [
+        "qollab-probe-local-dom.txt",
+        "qollab-probe-local.jpg"
+      ]
+    },
+    "local_runs": [
+      {
+        "job_id": "42bf5480-4d78-4970-9267-e897ffa9fff5",
+        "purpose": "first complete five-circuit platform check",
+        "chsh_success": 0.8525390625,
+        "logs": [
+          "qollab-local-dom.txt",
+          "qollab-local.jpg"
+        ]
+      },
+      {
+        "job_id": "dbbcb645-0afd-449e-89b0-7abe754c12de",
+        "created_utc": "2026-10-10T14:20:57.492000+00:00",
+        "purpose": "visible export fix verification; lifecycle issue retained",
+        "chsh_success": 0.852294921875,
+        "logs": [
+          "qollab-local-run-before-lifecycle-fix.json",
+          "qollab-local-export-dom.txt"
+        ]
+      },
+      {
+        "job_id": "f788ed00-3823-4ae3-ab34-0131a4e7c744",
+        "created_utc": "2026-10-10T14:27:01.152999+00:00",
+        "purpose": "final export/lifecycle verification",
+        "chsh_success": 0.85888671875,
+        "logs": [
+          "qollab-local-run.json",
+          "qollab-local-export-console.txt",
+          "qollab-local-quantum.mid",
+          "qollab-local-classical.mid"
+        ]
+      }
+    ],
+    "export_routes": {
+      "visible_payload": "passed JSON and both base64 MIDIs; verified against counts/events",
+      "console_envelope_extraction": "passed; console text read from visible DOM",
+      "native_in_frame_download": "blocked by Qollab sandbox allow-scripts",
+      "platform_Download_output": "automation timed out; no actual download observed",
+      "platform_Copy_output": "automation yielded empty clipboard; not verified"
+    },
+    "rows": [
+      {
+        "check": "Qollab free local simulator through real browser bridge",
+        "status": "passed",
+        "timestamp_utc": "2026-10-10T14:27:01.152999+00:00",
+        "command": "Chrome UI: Run > Built-in simulator (24q) Ideal Free; five-live, 1024, Ideal simulator, Generate once; Play/Stop/repeat/comparison/mutes; Export JSON and both MIDIs",
+        "browser": "Authenticated user Chrome, successful JSPI/Pyodide bridge; exact browser version not captured",
+        "backend": "qiskit.providers.basic_provider.basic_simulator.BasicSimulator",
+        "job_id": "f788ed00-3823-4ae3-ab34-0131a4e7c744",
+        "shots_per_circuit": 1024,
+        "chsh_shots": 4096,
+        "chsh_success": 0.85888671875,
+        "conditional_interval": [
+          0.8376663825665528,
+          0.8801070549334472
+        ],
+        "logs": [
+          "qollab-probe-local-dom.txt",
+          "qollab-local-run.json",
+          "qollab-local-export-console.txt",
+          "qollab-export-check.json",
+          "qollab-verified-context.jpg",
+          "qollab-verified-duet.jpg"
+        ],
+        "details": "One backend.run per take; five explicitly matched results; frozen hashes/events and MIDI checked. Native downloads blocked; visible payloads and console extraction passed; toolbar Download/Copy unverified."
+      },
+      {
+        "check": "Qollab free IonQ simulator through real browser bridge",
+        "status": "failed",
+        "timestamp_utc": "2026-10-10T14:25:47.598704+00:00",
+        "command": "Chrome UI: separate Run > IonQ Aria 1 (25q) Noise model Free; first five-live/1024 then separate four-recorded/1024; Generate once each",
+        "browser": "Authenticated user Chrome, successful JSPI/Pyodide bridge; exact browser version not captured",
+        "backend": "Qollab IonQ Aria 1 free noise-model simulator; qiskit_ionq provider per Python3.14 traceback",
+        "job_id": null,
+        "backend_run_calls_per_run": 1,
+        "accepted_jobs": 0,
+        "logs": [
+          "qollab-ionq-selected.jpg",
+          "qollab-ionq-dom.txt",
+          "qollab-ionq-recorded-dom.txt",
+          "qollab-ionq-failed.jpg"
+        ],
+        "details": "Both requests rejected before execution with HTTP400: Only job type ionq.circuit.v1 is supported. No counts/job id; failure stays visible; no silent fallback or second job in either Run. Result representation remains unverified.",
+        "cause_inference": "Upstream provider source uses ionq.multi-circuit.v1 for lists; likely transport incompatibility, not a confirmed platform internal diagnosis",
+        "provider_source": "https://qiskit-community.github.io/qiskit-ionq/_modules/qiskit_ionq/helpers.html"
+      }
+    ],
+    "ionq_attempts": [
+      {
+        "mode": "five-live",
+        "status": "failed",
+        "observed_utc": "2026-10-10T14:23:40.525345+00:00",
+        "backend_run_calls": 1,
+        "shots_requested_per_circuit": 1024,
+        "accepted_job_id": null,
+        "counts_returned": false,
+        "http_status": 400,
+        "error": "Only job type ionq.circuit.v1 is supported",
+        "logs": [
+          "qollab-ionq-dom.txt"
+        ]
+      },
+      {
+        "mode": "four-recorded",
+        "status": "failed",
+        "observed_utc": "2026-10-10T14:25:47.598704+00:00",
+        "backend_run_calls": 1,
+        "shots_requested_per_circuit": 1024,
+        "accepted_job_id": null,
+        "counts_returned": false,
+        "http_status": 400,
+        "error": "Only job type ionq.circuit.v1 is supported",
+        "logs": [
+          "qollab-ionq-recorded-dom.txt"
+        ]
+      }
+    ],
+    "final_archive_sha256": "33ed3892fc39bd6d7f7b2711c543695d3b0fab9f7287f9ad4b15598c4ab687e8",
+    "tested_runtime_scope": "Final ZIP runtime files match the tested local deployment source; only deployment notes and manifest metadata were updated after the final platform run. Editor line-ending normalization is possible."
+  }
+}

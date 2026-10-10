@@ -1,0 +1,56 @@
+{
+  "motifs": [
+    [
+      4,
+      3,
+      1,
+      1
+    ],
+    [
+      7,
+      5,
+      2,
+      2
+    ],
+    [
+      7,
+      2,
+      3,
+      0
+    ],
+    [
+      1,
+      1,
+      2,
+      4
+    ]
+  ],
+  "tokens": [
+    4,
+    3,
+    1,
+    1,
+    7,
+    5,
+    2,
+    2,
+    7,
+    2,
+    3,
+    0,
+    1,
+    1,
+    2,
+    4
+  ],
+  "sampled_bitstrings": [
+    "001001011100",
+    "010010101111",
+    "000011010111",
+    "100010001001"
+  ],
+  "source_sha256": "f29e60514add136c6007669f8a099e35ac40948e8c120b5832f6b192ec7b270b",
+  "source": "artifacts/milestone3a/base_melody.json",
+  "origin": "Previously generated QCBM motifs; recorded, never current-run measurements",
+  "checkpoint_sha256": "ecd7faaa232a15c261a5e3daf8047e0b4d71be9f4eb4bb597e70acb671c5b8a4"
+}
