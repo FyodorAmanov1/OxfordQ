@@ -12,12 +12,13 @@ dependencies = ["mido>=1.3,<2", "music21>=9,<10", "pydantic>=2.8,<3", "google-ge
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
+quantum = ["qiskit>=2,<3"]
 
 [project.scripts]
 qml-orchestrate = "orchestrator.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["orchestrator*"]
+include = ["orchestrator*", "quantum_models*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
