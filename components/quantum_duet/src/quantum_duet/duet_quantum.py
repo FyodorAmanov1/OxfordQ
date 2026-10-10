@@ -130,13 +130,23 @@ def run_batch(backend, angles, shots, *, melody_circuit=None, seed_simulator=Non
         options["memory"] = True
     job = backend.run(compiled, **options)  # One job per future Qollab/IonQ code run.
     result = job.result()
+    experiments = validated_experiments(result, labels, shots, memory=memory)
+    return {"backend_name": str(result.backend_name), "backend_version": str(result.backend_version),
+            "backend_class": f"{type(backend).__module__}.{type(backend).__name__}",
+            "job_id": str(job.job_id()), "backend_run_calls": 1, "shots_per_circuit": shots,
+            "circuit_count": len(circuits), "seed_simulator": seed_simulator,
+            "submitted_options": options, "experiments": experiments}
+
+
+def validated_experiments(result, labels, shots, *, memory=False):
+    """Match measured results by name and require actual integer allocations."""
     if not hasattr(result, 'results') or not callable(getattr(result, 'get_counts', None)):
         raise RuntimeError('Unsupported provider result representation: require labelled Qiskit Result experiments; no positional fallback')
-    if not result.success or len(result.results) != len(circuits):
+    if not result.success or len(result.results) != len(labels):
         raise RuntimeError("Requested backend returned failed/incomplete batch")
     matched = {}
     for result_index, experiment in enumerate(result.results):
-        header = experiment.header
+        header = getattr(experiment, 'header', None)
         name = header.get('name') if isinstance(header, dict) else getattr(header, 'name', None)
         if not isinstance(name, str) or name in matched:
             raise RuntimeError('Missing/duplicate provider circuit label; no positional fallback')
@@ -151,8 +161,13 @@ def run_batch(backend, angles, shots, *, melody_circuit=None, seed_simulator=Non
             raise RuntimeError('Provider returned an unsuccessful circuit')
         counts = {}
         width = 12 if label['role'] == 'live_base_melody' else 2
-        for key, value in result.get_counts(index).items():
-            bits = str(key).replace(' ', '')
+        histogram = result.get_counts(index)
+        if not isinstance(histogram, dict):
+            raise RuntimeError('Unsupported provider histogram; require integer counts dictionary')
+        for key, value in histogram.items():
+            if not isinstance(key, str):
+                raise RuntimeError('Unsupported count key; require measured Qiskit bit strings')
+            bits = key.replace(' ', '')
             if len(bits) != width or set(bits) - {'0', '1'} or isinstance(value, bool) or not isinstance(value, (int, np.integer)) or value < 0:
                 raise RuntimeError('Unsupported count key/value; require measured Qiskit bit strings and integer counts')
             counts[bits] = counts.get(bits, 0) + int(value)
@@ -162,8 +177,4 @@ def run_batch(backend, angles, shots, *, melody_circuit=None, seed_simulator=Non
         if memory:
             row["memory"] = [str(v) for v in result.get_memory(index)]
         experiments.append(row)
-    return {"backend_name": str(result.backend_name), "backend_version": str(result.backend_version),
-            "backend_class": f"{type(backend).__module__}.{type(backend).__name__}",
-            "job_id": str(job.job_id()), "backend_run_calls": 1, "shots_per_circuit": shots,
-            "circuit_count": len(circuits), "seed_simulator": seed_simulator,
-            "submitted_options": options, "experiments": experiments}
+    return experiments
