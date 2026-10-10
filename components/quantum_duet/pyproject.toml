@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oxfordq-quantum-duet"
+version = "0.1.0"
+description = "Frozen Quantum Duet inference and Qollab source interface"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+dependencies = ["qiskit==2.5.2", "numpy>=2.1,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+quantum-duet = "quantum_duet.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+quantum_duet = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -16,7 +16,15 @@ from .duet_referee import SETTINGS, cues, sampled_metrics, wins
 from .duet_classical import shared_choices, alice_output, bob_output
 from .music import events_from_outputs
 
-def load_assets():
+def load_assets(asset_dir=None):
+    if asset_dir is not None:
+        from pathlib import Path
+        directory = Path(asset_dir)
+        assets = [json.loads((directory / name).read_text(encoding="utf-8")) for name in
+                  ("selected_angles.json", "melody_angles.json", "recorded_melody.json")]
+        if len(assets[0]["parameters_radians"]) != 4 or len(assets[1]["parameters_radians"]) != 84:
+            raise ValueError("Frozen checkpoint dimensions invalid")
+        return tuple(assets)
     with open('data/selected_angles.json') as f:
         angles = json.load(f)
     with open('data/melody_angles.json') as f:
@@ -145,13 +153,13 @@ def validate_take(take):
             raise ValueError('Events differ from committed local outputs')
     json.dumps(take, allow_nan=False)
 
-def generate_take(backend, shots=1024, mode='five-live', execution_mode='selected-simulator-unverified', presentation_seed=None):
+def generate_take(backend, shots=1024, mode='five-live', execution_mode='selected-simulator-unverified', presentation_seed=None, *, asset_dir=None):
     if mode not in ('five-live', 'four-recorded'):
         raise ValueError('Explicitly select five-live or four-recorded mode')
     if execution_mode not in ('selected-simulator-unverified', 'ideal-local-development', 'ideal-simulator', 'noisy-simulator'):
         raise ValueError('Hardware execution mode is unsupported')
     limits = backend_limits(backend, shots, 5 if mode == 'five-live' else 4, 12 if mode == 'five-live' else 2)
-    angles, melody, recorded = load_assets()
+    angles, melody, recorded = load_assets(asset_dir)
     circuit = bind_parameters(build_circuit(), melody['parameters_radians']) if mode == 'five-live' else None
     batch = run_batch(backend, angles['parameters_radians'], shots, melody_circuit=circuit)
     batch['advertised_limits'] = limits
