@@ -4,6 +4,8 @@ Arrange independently generated instrument parts as tonal cinematic orchestral M
 Gemini proposes harmony, roles and bounded edits. Python protects the main melody,
 checks instrument limits, and records the source of every output note.
 
+Licensed under the [MIT License](LICENSE).
+
 Instrument sequence generation is pluggable: each instrument can use a distinct smaller
 classical or QML model. This version uses an existing Gemini model through inference for
 arrangement. A local rule baseline is available for development and comparison.
