@@ -1,0 +1,40 @@
+{
+  "data_status": "live",
+  "purpose": "single-circuit bridge diagnosis, not musical or CHSH evidence",
+  "observed_date_utc": "2026-10-10",
+  "project": "https://qollab.xyz/u/Floris/oxfordq-worker-a-private-bridg",
+  "project_state": "private draft",
+  "entry_point": "main.js imports standalone fixtures/probe.py through callPromising",
+  "built_in": {
+    "selection": "Built-in simulator (24q) Ideal Free",
+    "observed_utc": "2026-10-10T16:11:49.998000+00:00",
+    "finished_utc": "2026-10-10T16:11:50.145999+00:00",
+    "versions": {"python": "3.14.2", "qiskit": "2.5.2", "numpy": "2.4.6", "qiskit-ionq": "unknown (distribution metadata unavailable)", "pyodide": "unknown", "qollab": "unknown"},
+    "backend_class": "qiskit.providers.basic_provider.basic_simulator.BasicSimulator",
+    "backend_name": "basic_simulator",
+    "backend_run_calls": 1,
+    "job_id": "30b5a853-75b9-4c91-b94c-53403f612fed",
+    "counts": {"00": 25, "11": 7},
+    "shots": 32,
+    "status": "completed",
+    "api_path": "unknown (platform transport not inspected)",
+    "platform_proxy": "unknown"
+  },
+  "ionq": {
+    "selection": "IonQ Aria 1 (25q) Noise model Free",
+    "observed_utc": "2026-10-10T16:12:38.228000+00:00",
+    "finished_utc": "2026-10-10T16:12:54.140999+00:00",
+    "versions": {"python": "3.14.2", "qiskit": "2.5.2", "qiskit-ionq": "1.0.2", "numpy": "2.4.6", "pyodide": "unknown", "qollab": "unknown"},
+    "backend_class": "qiskit_ionq.ionq_backend.IonQSimulatorBackend",
+    "backend_name": "ionq_simulator",
+    "backend_run_calls": 1,
+    "job_id": "01a12696-88b0-73ab-ba43-b919b1180b11",
+    "counts": {"00": 18, "11": 14},
+    "shots": 32,
+    "serialized_schema": {"type": "ionq.circuit.v1", "shots": 32, "input_keys": ["circuit", "gateset", "qubits"], "qubits": 2},
+    "status": "completed",
+    "api_path": "unknown (platform transport not inspected)",
+    "platform_proxy": "unknown"
+  },
+  "four_five_remote": "not attempted: supported single-job multi-circuit schema remains unconfirmed"
+}
