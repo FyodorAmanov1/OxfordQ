@@ -176,6 +176,151 @@ function exportJSON(){
     payload
   }));
 }
+
+function _midiVarLen(value){
+  let buffer=value&0x7f,bytes=[];
+  while((value>>=7)){buffer<<=8;buffer|=((value&0x7f)|0x80);}
+  while(true){bytes.push(buffer&0xff);if(buffer&0x80)buffer>>=8;else break;}
+  return bytes;
+}
+function _midiU16(value){return[(value>>8)&255,value&255];}
+function _midiU32(value){return[(value>>24)&255,(value>>16)&255,(value>>8)&255,value&255];}
+function _midiAscii(text){return Array.from(text,c=>c.charCodeAt(0)&255);}
+
+function _qollabBytesToBase64(bytes){
+  let binary='';
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk){
+    binary+=String.fromCharCode(
+      ...bytes.subarray(i,Math.min(i+chunk,bytes.length))
+    );
+  }
+  return btoa(binary);
+}
+
+function _downloadBlob(blob,filename){
+  blob.arrayBuffer().then(buffer=>{
+    const bytes=new Uint8Array(buffer);
+    const payload=_qollabBytesToBase64(bytes);
+
+    $('export-panel').hidden=false;
+    $('export-payload').value=payload;
+
+    console.log(JSON.stringify({
+      event:'quantum-harmony-export',
+      filename,
+      mime_type:blob.type||'application/octet-stream',
+      encoding:'base64',
+      byte_length:bytes.length,
+      payload
+    }));
+
+    $('playback-status').textContent=
+      `${filename} prepared · ${bytes.length.toLocaleString()} bytes · `+
+      `Qollab may block direct download; use Console > Download output `+
+      `or copy the base64 payload below.`;
+  }).catch(error=>{
+    console.error(error);
+    $('playback-status').textContent=
+      `Export payload failed: ${error.message}`;
+  });
+
+  _downloadBlobDirect(blob,filename);
+}
+
+function _downloadBlobDirect(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function _safeExportName(){
+  return String(result?.key||'quantum-harmony')
+    .replace(/[^A-Za-z0-9_-]+/g,'-')
+    .replace(/^-+|-+$/g,'')||'quantum-harmony';
+}
+
+function exportMIDI(){
+  if(!result)return;
+
+  const ppq=480;
+  const bpm=Math.max(1,Number($('tempo').value)||110);
+  const micros=Math.round(60000000/bpm);
+  const events=[];
+
+  events.push(0x00,0xff,0x51,0x03,(micros>>16)&255,(micros>>8)&255,micros&255);
+
+  const selected={
+    piano:$('inst-piano').checked,
+    strings:$('inst-strings').checked,
+    synth:$('inst-synth').checked,
+    bass:$('inst-bass').checked
+  };
+
+  const harmonyChannels=[];
+  if(selected.piano) harmonyChannels.push({channel:0,program:0});
+  if(selected.strings) harmonyChannels.push({channel:1,program:48});
+  if(selected.synth) harmonyChannels.push({channel:2,program:80});
+  const bassChannel=selected.bass?{channel:3,program:32}:null;
+
+  if(!harmonyChannels.length&&!bassChannel){
+    $('playback-status').textContent='Select at least one instrument before exporting MIDI.';
+    return;
+  }
+
+  for(const item of harmonyChannels) events.push(0x00,0xc0|item.channel,item.program);
+  if(bassChannel) events.push(0x00,0xc0|bassChannel.channel,bassChannel.program);
+
+  const duration=4*ppq;
+
+  result.chords.forEach(chord=>{
+    const active=[];
+
+    for(const item of harmonyChannels){
+      for(const midi of chord.midi){
+        const note=Math.max(0,Math.min(127,Math.round(midi)));
+        events.push(0x00,0x90|item.channel,note,84);
+        active.push({channel:item.channel,note});
+      }
+    }
+
+    if(bassChannel){
+      const note=Math.max(0,Math.min(127,Math.round(chord.bass_midi)));
+      events.push(0x00,0x90|bassChannel.channel,note,72);
+      active.push({channel:bassChannel.channel,note});
+    }
+
+    active.forEach((item,index)=>{
+      events.push(..._midiVarLen(index===0?duration:0),0x80|item.channel,item.note,0);
+    });
+  });
+
+  events.push(0x00,0xff,0x2f,0x00);
+
+  const track=[..._midiAscii('MTrk'),..._midiU32(events.length),...events];
+  const bytes=new Uint8Array([
+    ..._midiAscii('MThd'),
+    ..._midiU32(6),
+    ..._midiU16(0),
+    ..._midiU16(1),
+    ..._midiU16(ppq),
+    ...track
+  ]);
+
+  _downloadBlob(
+    new Blob([bytes],{type:'audio/midi'}),
+    `${_safeExportName()}.mid`
+  );
+
+  $('playback-status').textContent=
+    `MIDI exported · ${result.chords.length} bars · ${bpm} BPM`;
+}
+
+
 $('generate').onclick=()=>generate(false);$('variation').onclick=()=>generate(true);$('play').onclick=play;$('stop').onclick=stopPlayback;$("midi").onclick = exportMIDI;
 $('export').onclick=exportJSON;$('tempo').oninput=()=>$('tempo-value').textContent=`${$('tempo').value} BPM`;window.addEventListener('pagehide',stopPlayback);renderInspector();
 

@@ -46,6 +46,7 @@ The following parts are intentionally classical:
 
 `Authentic` uses the measured coarse distribution unchanged. `In-key` removes the `OTHER` branch and renormalizes; `Adventurous` increases the measured `OTHER` weight before renormalizing.
 
+
 ## Model bundle
 
 `data/models.json` uses schema version 3:
