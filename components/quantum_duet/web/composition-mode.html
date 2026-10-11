@@ -1,0 +1,17 @@
+<nav id="app-modes" aria-label="OxfordQ app mode" style="max-width:1040px;margin:auto;padding:16px 24px">
+  <label>App mode<select id="app-mode"><option value="experiment">Experiment · CHSH coordination</option><option value="composition">Composition · PRE-GENERATED</option></select></label>
+</nav>
+<main id="composition-app" hidden>
+  <header><p class="eyebrow">OXFORDQ / OPTIONAL COMPOSITION</p><h1>16-bar Composition</h1><p class="subtitle">PRE-GENERATED · frozen recording · 120 BPM · 32 seconds</p></header>
+  <section>
+    <p>Existing trained 12-qubit QCBM motifs, sampled offline from its exact local statevector distribution with seed 20261011, then developed using classical harmony, rhythm, dynamics and phrase endings.</p>
+    <p>This recording does not run on the selected Qollab backend. Playback and exports use zero new samples, training steps or backend submissions. CHSH statistics describe the separate Experiment mode.</p>
+    <p id="composition-status" role="status" aria-live="polite">Select Composition to load the frozen recording.</p>
+    <div class="controls"><label>Recording<select id="composition-texture"><option value="melody">Melody only</option><option value="arranged">Melody with accompaniment</option></select></label></div>
+    <audio id="composition-audio" controls preload="metadata" style="width:100%;margin:16px 0" aria-label="Pre-generated composition playback and seeking"></audio>
+    <div class="controls"><button id="composition-midi" disabled>Export composition MIDI</button><button id="composition-json" disabled>Export composition provenance</button></div>
+    <details><summary>Composition source provenance</summary><pre id="composition-provenance">Not loaded.</pre></details>
+    <div id="composition-export-panel" hidden><p id="composition-export-description"></p><label>Lossless export payload<textarea id="composition-export-payload" readonly rows="5"></textarea></label></div>
+    <p class="small">The user accepted this frozen version for the demonstration on 2026-10-11. This is a listening assessment, not a scientific musical-quality claim. Original trace assessment text records its earlier, pre-listening state.</p>
+  </section>
+</main>

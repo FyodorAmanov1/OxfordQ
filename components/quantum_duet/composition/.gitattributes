@@ -1,0 +1,5 @@
+*.wav binary
+*.mid binary
+raw-samples.json -text
+trace.json -text
+freeze.json text eol=lf
