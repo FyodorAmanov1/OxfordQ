@@ -1,0 +1,38 @@
+{
+  "schema": "oxfordq.composition-freeze.v1",
+  "accepted_commit": "2801ba46ed5acdc7fbf0d3cca635f50aa8a2b88c",
+  "source_commit": "f42bcf1e3db5a2cc7d86e82d4dc6c06a0c6a440d",
+  "data_status": "PRE-GENERATED",
+  "musical_changes_allowed": false,
+  "listening_assessment": {
+    "status": "Accepted by user for demonstration",
+    "date": "2026-10-11",
+    "scope": "Human listening assessment; no scientific quality claim"
+  },
+  "files": {
+    "improved-arranged.mid": {
+      "sha256": "33ba5acb41935481496d9a465cb03515c24ead6c0af7ee31eb4ff744617af16c",
+      "bytes": 1883
+    },
+    "improved-arranged.wav": {
+      "sha256": "2c2d5780bbe58838aafe34e3e11db508704ffd169abb007a1806918a4d6ad379",
+      "bytes": 1411244
+    },
+    "improved-melody.mid": {
+      "sha256": "f6b3a813b3c71ce1171b40ff5e65dc1428bd4ddb36107fc805f8a0d3558a41b7",
+      "bytes": 737
+    },
+    "improved-melody.wav": {
+      "sha256": "126f0f82d9bb7ac59aa526b1297bc4ec9563360e9e540fdfae5caff211a54705",
+      "bytes": 1411244
+    },
+    "raw-samples.json": {
+      "sha256": "be635526814540453ae31e34266207e4c59dd61468c5118bb3b0159ea389a5bb",
+      "bytes": 3475
+    },
+    "trace.json": {
+      "sha256": "d4f5ca08e70fbf8dadf364863e9fb1f9cf4715239c3a68b7988caac9ade0eee5",
+      "bytes": 217247
+    }
+  }
+}
