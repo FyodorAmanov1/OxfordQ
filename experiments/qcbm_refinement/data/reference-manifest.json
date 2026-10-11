@@ -1,0 +1,10 @@
+{
+  "reference_commit": "f42bcf1e3db5a2cc7d86e82d4dc6c06a0c6a440d",
+  "raw_sha256": "be635526814540453ae31e34266207e4c59dd61468c5118bb3b0159ea389a5bb",
+  "reference_files": {
+    "arranged.mid": "72094b9f5bd7c15f395f507f3481ee5dc1c2fd5943fc5199c5834d5351686a2a",
+    "arranged.wav": "e5413d76ca68f5b41d40c89b197b3b5ab15ccfb3348f6b42d737a20787544090",
+    "melody.mid": "9c7ca0457a1a869f506a1d29af56b2329d05227b0113178ecaac03a0a0cc17fd",
+    "melody.wav": "78958556054540e84036028282b01be2c8caa2649b28b2812ed2873051a8d198"
+  }
+}
