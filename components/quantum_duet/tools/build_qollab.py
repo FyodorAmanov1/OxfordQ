@@ -15,7 +15,7 @@ for source in sorted((ROOT/'web').glob('*')):
     if source.is_file(): shutil.copyfile(source,out/source.name)
 for source in sorted((ROOT/'src/quantum_duet').glob('*.py')):
     # Optional CPython creative modules require orchestrator/music21/pydantic.
-    if source.name in ('cli.py','__main__.py','orchestration_adapter.py','browser_projection.py','composition_showcase.py'): continue
+    if source.name in ('cli.py','__main__.py','orchestration_adapter.py','browser_projection.py','composition_showcase.py','fresh_qcbm.py','five_part_composition.py','fresh_music_bridge.py'): continue
     dest=out/'quantum_duet'/source.name;dest.parent.mkdir(exist_ok=True)
     shutil.copyfile(source,dest)
 for source in sorted((ROOT/'src/quantum_duet/data').glob('*.json')):
