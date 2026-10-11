@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "imports": [
+    {
+      "path": "quantum_models/data/pop909_models.json",
+      "source_revision": "747871ce68ebbd7b9febe42c08c020aa688cb432",
+      "source_path": "pop909_qollab_studio_v2/data/models.json",
+      "sha256": "cdde2b9747a0f193eb6cde21f0ba3a219cbcaabefbbc81a03f3fe90191251fa1",
+      "source_bytes_preserved": true
+    },
+    {
+      "path": "quantum_models/data/qcbm_melody.json",
+      "source_revision": "c49c2e6cace0790211ae6808f4ecdc4cb77faa01",
+      "source_path": "components/quantum_duet/src/quantum_duet/data/melody_angles.json",
+      "sha256": "6b57c0bd921b9fac673353034e66cd07dec648bce044d2d2a890e0d35e15c024",
+      "source_bytes_preserved": true
+    },
+    {
+      "path": "quantum_models/qcbm_circuit.py",
+      "source_revision": "c49c2e6cace0790211ae6808f4ecdc4cb77faa01",
+      "source_path": "components/quantum_duet/src/quantum_duet/circuit.py",
+      "sha256": "542c0a625515a888f43b06f388d10953048b4515eea3e107da1b901ac3b4bc6e",
+      "source_bytes_preserved": true
+    }
+  ],
+  "training_performed": false,
+  "original_duet_mapping_modified": false,
+  "notes": "POP909 integration source copied then hardened locally; checkpoint and QCBM circuit bytes unchanged"
+}

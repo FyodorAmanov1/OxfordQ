@@ -62,7 +62,9 @@ def _diatonic_chords(tonality: str) -> list[str]:
     for degree in range(1, 8):
         triad = chord.Chord([scale.pitchFromDegree(d) for d in (degree, degree + 2, degree + 4)])
         suffix = {"major": "", "minor": "m", "diminished": "dim", "augmented": "+"}[triad.quality]
-        result.append(triad.root().name.replace("-", "b") + suffix)
+        # music21 uses '-' for flats in chord roots; converting to 'b' makes
+        # symbols such as Bb parse as a B chord with an invalid suffix.
+        result.append(triad.root().name + suffix)
     return result
 
 
@@ -138,7 +140,8 @@ def musical_metrics(score: Score, plan: ArrangementPlan, original: Score) -> dic
         pr = profile(part.instrument)
         ornament_ids = _ornaments(part, score.ppq)
         active = sorted((n for n in part.notes if not n.muted), key=lambda n: (n.onset_tick, n.pitch))
-        if pr.polyphony == 1:
+        if pr.family != "drums" and all(a.end_tick <= b.onset_tick for a, b in zip(active, active[1:])):
+            # A section capable of divisi may still carry one melodic line.
             voice_movements.extend(abs(b.pitch - a.pitch) for a, b in zip(active, active[1:]))
         for n in part.notes:
             source = original_map[n.id]
@@ -208,6 +211,8 @@ def musical_warnings(score: Score, original: Score) -> list[str]:
         alive = sorted((n for n in part.notes if not n.muted), key=lambda n: n.onset_tick)
         if total and len(alive) / total < 0.5:
             warnings.append(f"{part.id}: {total-len(alive)}/{total} notes muted; review loss of source material")
+        if profile(part.instrument).family == "drums":
+            continue  # Unpitched MIDI numbers identify drum sounds, not melodic intervals.
         boundaries = range(score.window_bars * score.ppq * 4, score.end_tick, score.window_bars * score.ppq * 4)
         for boundary in boundaries:
             before = [n for n in alive if n.onset_tick < boundary]

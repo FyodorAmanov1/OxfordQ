@@ -43,7 +43,8 @@ def project(raw_bytes, outcomes, *, raw_source_bytes=None):
             projection['available'] = False
             projection['errors'].extend(dict(policy=policy, **e) for e in p['errors'])
             continue
-        require(p['requested_backend'] == 'rules' and p['actual_backend'] == 'rules', 'Unexpected arrangement backend')
+        require(p['requested_backend'] in ('rules', 'gemini') and
+                p['actual_backend'] == p['requested_backend'], 'Unexpected arrangement backend')
         require(not p['errors'] and not p['fallback']['used'], 'Unexpected errors/fallback')
         source_events = {e['event_id']: e for e in raw['events'][policy]}
         source_ids = {e['event_id']: f'{voice}:n{i}' for voice in ('alice', 'bob')
@@ -74,7 +75,7 @@ def project(raw_bytes, outcomes, *, raw_source_bytes=None):
                         and line['muted'] == note.muted and line['transformation_id'] in transforms,
                         'Invalid note/source/transform lineage')
                 require(note.source_id == source_ids[e['event_id']] and
-                        line['transformation_id'] == f"{raw['run_id']}/arranged/rules/{policy}/{note.id}",
+                        line['transformation_id'] == f"{raw['run_id']}/arranged/{p['actual_backend']}/{policy}/{note.id}",
                         'Contradictory source/transform identity')
                 require(note.end_tick <= 16 * raw['ppq'], 'Output outside four bars')
                 p['events'].append(dict(event_id=line['transformation_id'], source_event_ids=[e['event_id']],
@@ -109,10 +110,11 @@ def browser_bundle(raw_bytes, projection=None, *, raw_source_bytes=None):
                 playback_projection=projection)
 
 
-def arrange_browser(raw_bytes, *, raw_source_bytes=None):
-    """Apply the same documented C-major/C-F-G-C rules plan separately to both policies."""
+def arrange_browser(raw_bytes, *, raw_source_bytes=None, backend="rules", model=None, provider=None):
+    """Apply the selected arranger separately with identical harmonic constraints."""
     frozen = freeze_result(json.loads(raw_bytes), raw_bytes=raw_source_bytes)
-    outcomes = {p: arrange_result(frozen, policy=p).to_dict() for p in ('quantum', 'classical')}
+    outcomes = {p: arrange_result(frozen, policy=p, backend=backend, model=model, provider=provider).to_dict()
+                for p in ('quantum', 'classical')}
     return browser_bundle(raw_bytes, project(raw_bytes, outcomes, raw_source_bytes=raw_source_bytes),
                           raw_source_bytes=raw_source_bytes)
 
@@ -123,12 +125,15 @@ def main():
     p.add_argument('--result', type=Path, required=True)
     p.add_argument('--raw-source', type=Path)
     p.add_argument('--out', type=Path, required=True)
+    p.add_argument('--backend', choices=('rules', 'gemini'), default='rules')
+    p.add_argument('--model')
     a = p.parse_args()
     if a.out.exists():
         p.error('Choose a fresh output filename')
     a.out.parent.mkdir(parents=True, exist_ok=True)
     source = a.raw_source.read_bytes() if a.raw_source else None
-    a.out.write_bytes(canonical_json(arrange_browser(a.result.read_bytes(), raw_source_bytes=source)))
+    a.out.write_bytes(canonical_json(arrange_browser(a.result.read_bytes(), raw_source_bytes=source,
+                                                     backend=a.backend, model=a.model)))
 
 if __name__ == '__main__':
     main()

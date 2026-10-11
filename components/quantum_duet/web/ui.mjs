@@ -217,6 +217,7 @@ export function mountDuet(run, environment, options = {}) {
     finally{loading=false;$('fixture').disabled=false;$('import-result').disabled=false;$('generate').disabled=generateDisabled;}
   };
   if($('arrange')) {
+    $('arrange').textContent=`Arrange locally · ${options.arrangementBackend || 'rules'} · zero quantum shots`;
     $('arrange').disabled=true;
     $('arrange').onclick=async()=>{
       if(loading||closed||!envelope||!options.arrange)return;

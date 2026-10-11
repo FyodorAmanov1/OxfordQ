@@ -9,12 +9,17 @@ from quantum_duet.cli import __file__ as package_file
 from qiskit.providers.basic_provider import BasicSimulator
 ROOT=Path(__file__).resolve().parents[1]
 FIXTURE=ROOT.parents[1]/'docs/fixtures/run-result.v1.json'
+ARRANGEMENT_BACKEND='rules'
+ARRANGEMENT_MODEL=None
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*args,**kwargs): super().__init__(*args,directory=str(ROOT),**kwargs)
     def do_GET(self):
         if self.path=='/api/fixture':
             # Fixed local asset only, never an unsupported Qollab/private fetch.
             text=json.dumps(browser_bundle(FIXTURE.read_bytes(),raw_source_bytes=(ROOT/'tests/fixtures/qollab-local-run.json').read_bytes())).encode('utf-8')
+            self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(text);return
+        if self.path=='/api/config':
+            text=json.dumps(dict(arrangement_backend=ARRANGEMENT_BACKEND)).encode('utf-8')
             self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(text);return
         if self.path=='/':
             html='<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/web/main.css"></head><body>'+(ROOT/'web/index.html').read_text(encoding='utf-8')+'<script type="module" src="/dev/main.mjs"></script></body></html>'
@@ -28,7 +33,8 @@ class Handler(SimpleHTTPRequestHandler):
             if self.path=='/api/arrange':
                 source=request.get('raw_source_text')
                 text=json.dumps(arrange_browser(request['raw_envelope_text'].encode('utf-8'),
-                    raw_source_bytes=None if source is None else source.encode('utf-8')))
+                    raw_source_bytes=None if source is None else source.encode('utf-8'),
+                    backend=ARRANGEMENT_BACKEND,model=ARRANGEMENT_MODEL))
             elif self.path=='/api/run':
                 run_id='qm-local-'+str(uuid.uuid4())  # Assigned before the one actual execution.
                 backend=BasicSimulator();backend.set_options(seed_simulator=32001,use_clifford_optimization=False)
@@ -43,6 +49,9 @@ class Handler(SimpleHTTPRequestHandler):
             text=json.dumps({'error':str(exc)});status=500
         self.send_response(status);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(text.encode())
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=8766);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=8766)
+    p.add_argument('--arrangement-backend',choices=('rules','gemini'),default='rules')
+    p.add_argument('--model');a=p.parse_args()
+    ARRANGEMENT_BACKEND=a.arrangement_backend;ARRANGEMENT_MODEL=a.model
     print(f'LOCAL development, not Qollab: http://127.0.0.1:{a.port}',flush=True)
     ThreadingHTTPServer(('127.0.0.1',a.port),Handler).serve_forever()
