@@ -4,6 +4,13 @@ import base64
 import json
 from pathlib import Path
 
+EXPORT_FILENAMES = (
+    'quantum-duet-run.json',
+    'quantum-duet-quantum.mid', 'quantum-duet-classical.mid',
+    'quantum-duet-raw-quantum.mid', 'quantum-duet-raw-classical.mid',
+    'quantum-duet-arranged-quantum.mid', 'quantum-duet-arranged-classical.mid',
+)
+
 
 def extract(text, destination):
     destination = Path(destination)
@@ -16,7 +23,7 @@ def extract(text, destination):
             continue
         record, _ = decoder.raw_decode(line[start:])
         name = record['filename']
-        if name not in ('quantum-duet-run.json', 'quantum-duet-quantum.mid', 'quantum-duet-classical.mid'):
+        if name not in EXPORT_FILENAMES:
             raise ValueError('Unexpected export filename')
         if record['encoding'] == 'utf-8' and name.endswith('.json'):
             json.loads(record['payload'])
@@ -39,7 +46,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('console_output', type=Path)
     parser.add_argument('--output-dir', type=Path, default=Path('duet-exports'))
-    parser.add_argument('--filename', choices=('quantum-duet-run.json', 'quantum-duet-quantum.mid', 'quantum-duet-classical.mid'),
+    parser.add_argument('--filename', choices=EXPORT_FILENAMES,
                         help='Decode one payload copied from the visible Export payload field')
     args = parser.parse_args()
     text = args.console_output.read_text(encoding='utf-8-sig')
