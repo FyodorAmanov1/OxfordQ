@@ -17,7 +17,7 @@ SHA-256 is provided. All returned measured occurrences, duplicate bitstrings,
 tokens, histogram and unused occurrence IDs remain in the immutable source.
 
 Five tracks are Flute, Clarinet, Violin, Cello and Piano, with zero-based GM
-programs 73, 71, 48, 42 and 0 and distinct channels 0–4. Events use quarter-note
+programs 73, 71, 40, 42 and 0 and distinct channels 0–4. Events use quarter-note
 beats, `pitch_midi`, `onset_beats`, `duration_beats`, `velocity`, `rest`,
 `source_occurrence_id`, `source_token_index`, `source_event_ids`, and
 `transformation_lineage`. Output event IDs retain the original run ID. A source
@@ -55,8 +55,9 @@ The following existing algorithms informed the implementation:
 - `quantum_models/qcbm_instrument.py`: explicit classical C-major decoding and
   different instrument registers from one shared frozen checkpoint.
 - `orchestrator/instruments.py`: conservative concert-pitch ranges. The compact
-  Cello uses the specific GM cello program 42 rather than the existing generic
-  string-section program 48; the existing profile is not modified.
+  Cello uses the specific GM cello program 42 and Violin uses solo Violin 40
+  rather than the existing generic string-section program 48; existing profiles
+  are not modified.
 
 Four measured motif assignments per instrument are selected by C without
 favorable-result selection. The deterministic classical bar-index sequences
