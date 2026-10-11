@@ -19,6 +19,8 @@ python -m orchestrator.composition --style all --out output-expressive-studies -
 
 This produces piece1–piece4 (Bach, Mozart, Debussy and Rachmaninoff inspiration),
 with a listening page, source/reference comparisons and traceable MIDI/score output.
+The composition ensemble includes flute, clarinet, violin, cello, double bass and
+piano. Piano receives a dedicated two-hand accompaniment with pedal changes.
 Use --no-audio for MIDI only. The composition stage develops motifs, rhythm,
 register, phrase rests, dynamics and metre/tempo maps while retaining source pitch
 classes. Existing arrangement and Quantum Duet behavior remain available.
@@ -34,6 +36,12 @@ approximations with their existing volume controls.
 The local baseline is procedural; optional Gemini uses validated source-referenced
 plans. Live API calls require explicit --live-gemini; offline provider comparisons
 are supported. No new model training is required.
+
+A separate [compact local submission](docs/submission.md) preserves the original
+module and component paths while fitting 100 shipped files, each below 2 MB.
+It uses compressed sample banks for the six composition instruments. Python and pip
+dependencies are installed separately; this is a Windows application, not a Qollab
+browser deployment. The full project and high-quality audio assets remain intact.
 
 ## Current local model pipeline
 

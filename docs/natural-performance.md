@@ -12,6 +12,13 @@ python scripts/setup_acoustic.py
 qml-compose --style all --require-audio --out output-natural-studies
 ```
 
+The default ensemble is flute, clarinet, violin, cello, double bass **and piano**.
+The keyboard receives a dedicated bass-and-upper-hand accompaniment: broken chords
+for Mozart, arpeggios elsewhere, and sustained chords at arrivals. Its tones retain
+the quantum harmony bank's source references; strike dynamics and harmonic pedal
+changes are performed by the existing keyboard policy. Explicit `--instruments`
+still selects a custom ensemble.
+
 The Windows x64 installer downloads sfizz 1.2.3 and VSCO 2 CE 1.1.0 into
 `assets/acoustic`, verifies pinned SHA-256 digests, validates archive paths, and writes
 an installation receipt. About 2.2 GiB is downloaded; extracted samples need additional
@@ -128,3 +135,9 @@ Repository code remains MIT. Asset rights remain separate:
   binaries. [Upstream license](https://github.com/sfztools/sfizz/blob/1.2.3/LICENSE).
 - GeneralUser GS / FluidSynth remain optional assets for native SoundFont playback
   and historical comparison; their existing upstream terms continue to apply.
+
+## Compact local submission
+
+See [submission packaging](submission.md). A separate runnable snapshot preserves
+the original module paths and contains compact sample banks for six instruments.
+The original high-quality assets, previous pieces, and directory layout are retained.

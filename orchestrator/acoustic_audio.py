@@ -5,6 +5,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import tempfile
+import zlib
 import numpy as np
 from .performance import performance_for
 from .composition.performer import validate_performance
@@ -37,17 +39,48 @@ PLAYABLE_RANGES = {
 def discover_acoustic(config):
     root = Path(__file__).resolve().parents[1]
     receipt = None
+    receipt_root = None
     roots = [root / "assets" / "acoustic"]
     if os.environ.get("QML_ACOUSTIC_ASSETS"):
         roots.insert(0, Path(os.environ["QML_ACOUSTIC_ASSETS"]))
     for candidate in roots:
         if (candidate / "receipt.json").is_file():
             receipt = json.loads((candidate / "receipt.json").read_text(encoding="utf-8"))
+            receipt_root = candidate
             break
-    library = config.sfizz_library or os.environ.get("SFIZZ_LIBRARY") or (receipt or {}).get("library") or find_library("sfizz")
-    samples = config.sample_library or os.environ.get("VSCO_PATH") or (receipt or {}).get("samples")
+    def installed_path(key):
+        value = (receipt or {}).get(key)
+        if value is None:
+            return None
+        path = Path(value)
+        return path if path.is_absolute() else receipt_root / path
+    library = config.sfizz_library or os.environ.get("SFIZZ_LIBRARY") or installed_path("library") or find_library("sfizz")
+    samples = config.sample_library or os.environ.get("VSCO_PATH") or installed_path("samples")
     if not library or not samples or not Path(samples).is_dir():
         raise OSError("Acoustic assets unavailable. Run scripts/setup_acoustic.py or supply --sfizz-library and --sample-library; no fallback was used.")
+    library = Path(library)
+    if library.suffix == ".zlib":
+        packed = (receipt or {}).get("packed_library", {})
+        payload = library.read_bytes()
+        if hashlib.sha256(payload).hexdigest() != packed.get("compressed_sha256"):
+            raise OSError("Compact sampler checksum mismatch")
+        expected_size = packed.get("bytes", 0)
+        if not 0 < expected_size <= 16_000_000:
+            raise OSError("Invalid compact sampler size")
+        decoder = zlib.decompressobj()
+        binary = decoder.decompress(payload, expected_size+1)
+        if (len(binary) != expected_size or not decoder.eof or decoder.unused_data
+                or hashlib.sha256(binary).hexdigest() != packed.get("sha256")):
+            raise OSError("Restored compact sampler checksum mismatch")
+        cache = Path(tempfile.gettempdir()) / ("OxfordQ-sfizz-" + packed["sha256"])
+        cache.mkdir(exist_ok=True)
+        restored = cache / "sfizz.dll"
+        if not restored.is_file() or hashlib.sha256(restored.read_bytes()).hexdigest() != packed["sha256"]:
+            with tempfile.NamedTemporaryFile(dir=cache, suffix=".tmp", delete=False) as handle:
+                handle.write(binary)
+                temporary = Path(handle.name)
+            temporary.replace(restored)
+        library = restored
     return str(library), Path(samples).resolve(), receipt
 
 
@@ -93,7 +126,9 @@ class SfzSynth:
             self.lib.sfizz_set_sample_rate(self.synth,rate)
             self.lib.sfizz_set_samples_per_block(self.synth,block_size)
             self.lib.sfizz_set_num_voices(self.synth,256)
-            self.lib.sfizz_set_preload_size(self.synth,8*1024*1024)
+            # Compact banks contain many regions in one file. Preload their full
+            # decoded frames, including regions far beyond the file's beginning.
+            self.lib.sfizz_set_preload_size(self.synth,16*1024*1024)
             if not self.lib.sfizz_load_file(self.synth,_sample_path(patch)):
                 raise RuntimeError("sfizz could not load " + str(patch))
             # Preload the full samples for reproducible offline rendering: no streaming underruns.

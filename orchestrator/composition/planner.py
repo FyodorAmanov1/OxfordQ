@@ -107,9 +107,10 @@ def local_plan(request, bank):
             {sources[e].pitch%12 for e in c.events} for c in bank.chords):
         warnings.append("Minor-key dominant major chord is unavailable; cadences use the supplied relative-major harmony bank")
     counter = next((i for i in request.instruments if i!=request.lead_track
-                    and i not in ("cello","double_bass","tuba","bassoon","timpani","percussion")),None)
-    support = [i for i in request.instruments if i not in (request.lead_track,counter)]
-    if not support and counter:
+                    and i not in ("cello","double_bass","tuba","bassoon","timpani","percussion","piano")),None)
+    piano_support = "piano" in request.instruments and request.lead_track != "piano"
+    support = [i for i in request.instruments if i not in (request.lead_track,counter,"piano")]
+    if not support and not piano_support and counter:
         support,counter = [counter],None
     marks,occurrences,harmony = [],[],[]
     centers = {"flute":77,"piccolo":87,"clarinet":68,"oboe":72,"violin_1":72,"violin_2":69,
@@ -122,7 +123,7 @@ def local_plan(request, bank):
             function = "arrival" if last==request.bars else "development" if section_index==1 else "answer" if answer else "question"
             for instrument in request.instruments:
                 articulation = "connected"
-                if instrument in support:
+                if instrument in support or (instrument == "piano" and piano_support):
                     articulation = "pizzicato" if request.style=="mozart" and instrument in ("cello","double_bass") else "sustained"
                 marks.append(PhraseMark(id=f"phrase/{first}/{instrument}",part_id=instrument,
                     start_tick=phrase_start,end_tick=phrase_end,peak_tick=phrase_start+round((phrase_end-phrase_start)*(.58 if answer else .72)),
@@ -192,7 +193,7 @@ def local_plan(request, bank):
         if pool:
             progression[bar] = max(pool,key=lambda c:sum(weight for pc,weight in weighted
                 if pc in {sources[e].pitch%12 for e in c.events}))
-        if not support:
+        if not support and not piano_support:
             continue
         end_phrase = any(p.part_id==request.lead_track and p.end_tick==starts[bar+1] for p in marks)
         texture = settings["texture"]
@@ -201,6 +202,15 @@ def local_plan(request, bank):
         # Sparse openings and cadence space give the melody room.
         targets = support if bar%4 else support[-2:]
         length = timeline.bar_ticks(bar)
+        if piano_support:
+            piano_texture = "sustained" if end_phrase or bar==0 else "broken" if request.style=="mozart" else "arpeggio"
+            harmony.append(HarmonyOccurrence(id=f"piano-harmony/{bar}",chord_id=progression[bar].id,
+                target_parts=["piano"], start_tick=starts[bar],
+                span_ticks=length-(240 if end_phrase and bar!=request.bars-1 else 0),
+                texture=piano_texture,pulse_ticks=240 if request.style=="mozart" else 160 if request.style=="rachmaninoff" else 480,
+                register_target=64,velocity=57+(13 if bounds[1]<=bar<bounds[2] else 0)))
+        if not targets:
+            continue
         harmony.append(HarmonyOccurrence(id=f"harmony/{bar}",chord_id=progression[bar].id,target_parts=targets,
             start_tick=starts[bar],span_ticks=length-(240 if end_phrase and bar!=request.bars-1 else 0),
             texture=texture,pulse_ticks=240 if request.style=="mozart" else 160 if request.style=="rachmaninoff" else 480,

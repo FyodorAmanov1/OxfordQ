@@ -241,7 +241,39 @@ def compile_plan(plan, bank, request, *, planner="local"):
                 tick += step
         else:
             chord = chords[occurrence.chord_id]
-            if occurrence.texture in ("sustained", "pedal"):
+            if occurrence.target_parts == ["piano"]:
+                # A separate keyboard occurrence has a bass foundation and an upper
+                # hand. Every tone still references a model-produced chord event.
+                limits = request.register_limits.get("piano")
+                root_pitch = _place(source[chord.events[0]].pitch, "piano", 40, limits=limits)
+                slots.append(emit(occurrence.id, "bass", chord.events[0], "piano",
+                    occurrence.start_tick, round(occurrence.span_ticks * .9), 40,
+                    max(1, occurrence.velocity - 6), forced_pitch=root_pitch))
+                upper = []
+                for event_id in chord.events:
+                    pitch = _place(source[event_id].pitch, "piano", occurrence.register_target, limits=limits)
+                    if pitch == root_pitch:
+                        pitch = _place(source[event_id].pitch, "piano", root_pitch + 24, limits=limits)
+                    if pitch != root_pitch and pitch not in [p for _, p in upper]:
+                        upper.append((event_id, pitch))
+                upper.sort(key=lambda item: item[1])
+                if occurrence.texture in ("sustained", "pedal"):
+                    for index, (event_id, pitch) in enumerate(upper):
+                        slots.append(emit(occurrence.id, f"upper/{index}", event_id, "piano",
+                            occurrence.start_tick, round(occurrence.span_ticks * .94),
+                            occurrence.register_target, occurrence.velocity, forced_pitch=pitch))
+                elif upper:
+                    for index, tick in enumerate(range(occurrence.start_tick,
+                            occurrence.start_tick + occurrence.span_ticks, occurrence.pulse_ticks)):
+                        pattern = [0, len(upper)-1, min(1, len(upper)-1), len(upper)-1]
+                        position = pattern[index % 4] if occurrence.texture == "broken" else index % len(upper)
+                        event_id, pitch = upper[position]
+                        duration = round(min(occurrence.pulse_ticks,
+                            occurrence.start_tick + occurrence.span_ticks - tick) * .88)
+                        slots.append(emit(occurrence.id, f"upper/{index}", event_id, "piano",
+                            tick, duration, occurrence.register_target,
+                            max(1, occurrence.velocity - (3 if index % 3 else 0)), forced_pitch=pitch))
+            elif occurrence.texture in ("sustained", "pedal"):
                 voicing = _voice_chord(chord,occurrence.target_parts,source,previous,occurrence.register_target,request.register_limits)
                 for index, (instrument,event_id,pitch) in enumerate(voicing):
                     target = occurrence.register_target - (24 if instrument in ("double_bass", "tuba") else 12 if instrument == "cello" else 0)
