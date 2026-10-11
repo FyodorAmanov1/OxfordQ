@@ -21,6 +21,8 @@ def main(argv=None):
     parser.add_argument("--model", default="gemini-3.8-flash")
     parser.add_argument("--instruments", nargs="+", default=["flute", "clarinet", "violin_1", "cello", "double_bass"])
     parser.add_argument("--lead", default="flute")
+    parser.add_argument("--part-volume", action="append", default=[], metavar="INSTRUMENT=LEVEL",
+                        help="Per-instrument volume from 0 to 1; repeat for multiple instruments")
     parser.add_argument("--out", type=Path, default=Path("output-composition"))
     parser.add_argument("--source-bank", type=Path, help="Reuse a source bank from earlier inference or a custom registry")
     parser.add_argument("--no-audio", action="store_true")
@@ -36,6 +38,12 @@ def main(argv=None):
         parser.error("Choose a fresh --out; existing pieces are preserved")
     styles = ["bach", "mozart", "debussy", "rachmaninoff"] if args.style == "all" else [args.style]
     try:
+        volumes = {}
+        for item in args.part_volume:
+            name, value = item.split("=", 1)
+            if name in volumes:
+                raise ValueError("Duplicate part volume " + name)
+            volumes[name] = float(value)
         bank = SourceBank.model_validate_json(args.source_bank.read_text(encoding="utf-8")) if args.source_bank else None
         audio = OrchestrationConfig(fluidsynth=args.fluidsynth, soundfont=args.soundfont)
         studies, status = [], 0
@@ -46,6 +54,7 @@ def main(argv=None):
             request = CompositionRequest(style=style, seed=args.seed + index * 101, bars=bars,
                 instruments=args.instruments, lead_track=args.lead, key=args.key,
                 planner=args.planner, compare=args.compare, model=args.model)
+            request.part_volumes = volumes
             result = compose(request, bank=bank, output_dir=out, render_audio=not args.no_audio,
                              audio_config=audio, allow_live_api=args.live_gemini)
             print(json.dumps({"piece": name, "style": style, "output": str(out.resolve()),

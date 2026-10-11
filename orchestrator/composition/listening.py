@@ -13,6 +13,7 @@ def _page(title, content):
 def write_study_page(out, request, report):
     title = request.style.capitalize() + " inspired ensemble study"
     content = '<h1>' + escape(title) + '</h1><p>Same frozen source bank; source pitches retained. Composer names describe inspiration.</p>'
+    content += '<p><label>Playback volume <input id="volume" type="range" min="0" max="100" value="75" aria-label="Playback volume"> <span id="volume-value">75%</span></label></p>'
     for name, metrics in report["variants"].items():
         label = {"raw": "Fixed-grid source reference", "local": "Local procedural composition", "gemini": "Gemini composition"}[name]
         wav = out / (name + ".wav")
@@ -28,6 +29,9 @@ def write_study_page(out, request, report):
         content += '<p>Gemini: ' + escape(report["gemini"]["status"]) + '. No Gemini audio was generated.</p>'
     content += '<p>Diagnostics describe structure; they do not measure beauty. Listen for thematic return, phrasing, balance and convincing arrivals.</p>'
     content += '<p><a href="report.json">Run report</a> · <a href="source-bank.json">Immutable source bank</a> · <a href="local.plan.json">Local composition plan</a></p>'
+    if report["audio"].get("performance"):
+        content += '<p>Instrument-specific note envelopes shape attack, decay, breath/bow sustain and release. Track volume and phrase expression shape balance.</p>'
+    content += '<script>const v=document.getElementById("volume");function volume(){document.querySelectorAll("audio").forEach(a=>a.volume=Number(v.value)/100);document.getElementById("volume-value").textContent=v.value+"%";}v.addEventListener("input",volume);volume();</script>'
     (out / "index.html").write_text(_page(title, content), encoding="utf-8")
 
 

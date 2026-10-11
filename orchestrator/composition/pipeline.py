@@ -120,7 +120,7 @@ def compose(request, *, bank=None, registry=None, provider=None, output_dir=None
             artifacts[name + "_midi"] = str(midi)
             midis[name] = midi
         if render_audio:
-            audio, report["audio"] = render_comparisons(midis, audio_config or OrchestrationConfig())
+            audio, report["audio"] = render_comparisons(midis, audio_config or OrchestrationConfig(), scores=scores)
             artifacts.update(audio)
             if report["audio"]["status"] == "rendered":
                 durations = {}

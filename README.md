@@ -23,6 +23,8 @@ register, phrase rests, dynamics and metre/tempo maps while retaining source pit
 classes. Existing arrangement and Quantum Duet behavior remain available.
 
 See [composition usage, model replacement and limitations](docs/composition.md).
+Audio now uses instrument-specific attack/sustain/release envelopes and per-part
+volume; browser previews and listening pages include playback volume controls.
 The local baseline is procedural; optional Gemini uses validated source-referenced
 plans. Live API calls require explicit --live-gemini; offline provider comparisons
 are supported. No new model training is required.

@@ -51,6 +51,7 @@ export class DuetAudio {
   constructor(onFrame, onState, contextFactory = () => new AudioContext()) {
     this.onFrame=onFrame;this.onState=onState;this.contextFactory=contextFactory;
     this.context=null;this.nodes=[];this.voices={};this.generation=0;this.frame=null;
+    this.master=null;this.volume=.8;
   }
   stop() {
     this.generation++;
@@ -60,40 +61,66 @@ export class DuetAudio {
     this.nodes=[];
     for(const gain of Object.values(this.voices))gain.disconnect();
     this.voices={};this.onState('Stopped',0);
+    if(this.master){this.master.disconnect();this.master=null;}
   }
   mute(voice, muted){if(this.voices[voice])this.voices[voice].gain.setValueAtTime(muted?0:1,this.context.currentTime);}
+  setVolume(value){
+    if(!Number.isFinite(value)||value<0||value>1)throw Error('Volume must be between zero and one');
+    this.volume=value;
+    if(this.master){this.master.gain.cancelScheduledValues(this.context.currentTime);this.master.gain.setValueAtTime(this.master.gain.value,this.context.currentTime);this.master.gain.linearRampToValueAtTime(value,this.context.currentTime+.025);}
+  }
   async play(events,bpm,mutes) {
     this.stop();const generation=this.generation;
     this.context ||= this.contextFactory();
     await this.context.resume();
     if(generation!==this.generation)return; // cancels races between repeated user gestures
     const ctx=this.context, beat=60/bpm, start=ctx.currentTime+.06;
+    this.master=ctx.createGain();this.master.gain.value=this.volume;this.master.connect(ctx.destination);
     for(const voice of ['alice','bob']) {
-      const gain=ctx.createGain();gain.gain.value=mutes[voice]?0:1;gain.connect(ctx.destination);this.voices[voice]=gain;
+      const gain=ctx.createGain();gain.gain.value=mutes[voice]?0:1;gain.connect(this.master);this.voices[voice]=gain;
     }
     for(const e of events) {
       if(e.rest)continue;
       const osc=ctx.createOscillator(),gain=ctx.createGain(),real=new Float32Array(6),imag=new Float32Array(6);
       if(e.voice==='alice'){imag[1]=1/1.2;imag[2]=.2/1.2;}
-      else{const scale=1+1/9+1/25;imag[1]=1/scale;imag[3]=-1/9/scale;imag[5]=1/25/scale;}
+      else{for(let harmonic=1;harmonic<imag.length;harmonic++)imag[harmonic]=1/(harmonic*2.4);}
       osc.setPeriodicWave(ctx.createPeriodicWave(real,imag,{disableNormalization:true}));
       osc.frequency.value=440*2**((e.pitch_midi-69)/12);
       const at=start+e.onset_beats*beat,duration=e.duration_beats*beat;
-      const level=.18*(e.velocity??80)/80,attack=Math.min(.01,duration/4),release=Math.min(.03,duration/4);
-      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(level,at+attack);
-      gain.gain.setValueAtTime(level,at+duration-release);gain.gain.linearRampToValueAtTime(0,at+duration);
-      osc.connect(gain);gain.connect(this.voices[e.voice]);osc.start(at);osc.stop(at+duration);
+      const level=.18*Math.pow((e.velocity??80)/127,1.4);
+      const release=scheduleInstrumentEnvelope(gain.gain,at,duration,level,e.voice==='alice'?'flute':'cello');
+      osc.connect(gain);gain.connect(this.voices[e.voice]);osc.start(at);osc.stop(at+duration+release);
       this.nodes.push({osc,gain});
     }
     this.onState('Playing',this.nodes.length);
+    const end=Math.max(16,...events.filter(e=>!e.rest).map(e=>e.onset_beats+e.duration_beats+Math.min(e.voice==='alice'?.075:.15,Math.max(.008,e.duration_beats*beat*.4))/beat));
     const frame=()=>{
       if(generation!==this.generation)return;
       const position=Math.max(0,(ctx.currentTime-start)/beat);
-      if(position>=16){this.stop();this.onFrame(0);return;}
-      this.onFrame(position);this.frame=requestAnimationFrame(frame);
+      if(position>=end){this.stop();this.onFrame(0);return;}
+      this.onFrame(Math.min(position,15.999));this.frame=requestAnimationFrame(frame);
     };
     frame();
   }
+}
+
+export function scheduleInstrumentEnvelope(parameter,at,duration,level,instrument){
+  const spec=instrument==='flute'?{attack:.075,decay:.09,sustain:.84,release:.075,swell:.20}:
+    {attack:.024,decay:.08,sustain:.88,release:.15,swell:.14};
+  const attack=Math.min(spec.attack,duration*.22),decay=Math.min(spec.decay,duration*.22),release=Math.min(spec.release,Math.max(.008,duration*.4));
+  const times=[0,attack,...Array.from({length:32},(_,i)=>duration*(i+1)/32)];
+  parameter.setValueAtTime(0,at);
+  for(const time of [...new Set(times)].sort((a,b)=>a-b)){
+    if(time===0)continue;
+    const phase=Math.max(0,Math.min(1,(time-attack-decay)/Math.max(.001,duration-attack-decay)));
+    const value=time<attack?.5-.5*Math.cos(Math.PI*time/attack):
+      (1-(1-spec.sustain)*Math.min(1,(time-attack)/decay))*(1+spec.swell*Math.sin(Math.PI*phase))*(1-.22*phase**3);
+    parameter.linearRampToValueAtTime(level*value,at+time);
+  }
+  for(let i=1;i<=8;i++){
+    parameter.linearRampToValueAtTime(level*spec.sustain*.78*(.5+.5*Math.cos(Math.PI*i/8)),at+duration+release*i/8);
+  }
+  return release;
 }
 
 function download(name,type,body) {
@@ -265,9 +292,11 @@ export function mountDuet(run, environment, options = {}) {
   $('stop').onclick=()=>{audio.stop();frame(0);};
   $('method').onchange=()=>{audio.stop();updateMusicMode();draw();};
   $('tempo').onchange=()=>{audio.stop();frame(0);};
+  const volume=$('volume');
+  if(volume){volume.oninput=()=>{audio.setVolume(Number(volume.value)/100);const label=$('volume-value');if(label)label.textContent=volume.value+'%';};if(volume.value!=='')audio.setVolume(Number(volume.value)/100);}
   for(const voice of ['alice','bob'])$('mute-'+voice).onchange=()=>audio.mute(voice,$('mute-'+voice).checked);
   $('midi').onclick=()=>{try{download(`quantum-duet-${$('music-mode').value}-${method()}.mid`,'audio/midi',midiBytes(events(),tempo(),envelope?{run_id:envelope.run_id,method:method(),mode:$('music-mode').value,raw_source:envelope.raw_source,round_ids:envelope.rounds.map(r=>r.round_id),transformation_ids:$('music-mode').value==='arranged'?(projection?.policies[method()].transformation_ids??envelope.arranged.transformation_ids):[]}:null));}catch(error){$('playback-status').textContent=error.message;}};
-  $('json').onclick=()=>download('quantum-duet-run.json','application/json',exportEnvelope(rawText,envelope||take,{method:method(),mode:$('music-mode').value,tempo_bpm:Number($('tempo').value),mute_alice:$('mute-alice').checked,mute_bob:$('mute-bob').checked},projection,sourceText));
+  $('json').onclick=()=>download('quantum-duet-run.json','application/json',exportEnvelope(rawText,envelope||take,{method:method(),mode:$('music-mode').value,tempo_bpm:Number($('tempo').value),volume:audio.volume,mute_alice:$('mute-alice').checked,mute_bob:$('mute-bob').checked},projection,sourceText));
   window.addEventListener('pagehide',()=>{closed=true;audio.stop();finish();});
   // Keep Qollab's Run alive for playback/export console messages until Stop.
   // The requested guard still permits exactly one backend call on this page.

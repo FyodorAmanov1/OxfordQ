@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from typing import Literal
 
 from pydantic import Field, model_validator
 from orchestrator.models import Schema, Part
+from orchestrator.performance import InstrumentPerformance
 
 Style = Literal["bach", "mozart", "debussy", "rachmaninoff"]
 
@@ -21,6 +23,7 @@ class CompositionRequest(Schema):
     planner: Literal["local", "gemini"] = "local"
     compare: bool = False
     model: str = "gemini-3.8-flash"
+    part_volumes: dict[str, float] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def instruments_valid(self):
@@ -29,6 +32,9 @@ class CompositionRequest(Schema):
             raise ValueError("Require unique instruments and a selected lead")
         if any(profile(i).family == "drums" for i in self.instruments):
             raise ValueError("Composition v1 uses pitched instrument sources")
+        if any(i not in self.instruments or not math.isfinite(value) or not 0 <= value <= 1
+               for i, value in self.part_volumes.items()):
+            raise ValueError("Part volumes require selected instruments and levels from zero to one")
         return self
 
 
@@ -192,6 +198,7 @@ class ComposedScore(Schema):
     planner: Literal["raw", "local", "gemini"]
     # Includes silent source tokens and deliberate phrase gaps.
     occurrences: list[dict] = Field(default_factory=list)
+    performance: dict[str, InstrumentPerformance] = Field(default_factory=dict)
 
     @property
     def ppq(self):

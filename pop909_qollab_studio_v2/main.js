@@ -1,6 +1,6 @@
 import * as inference from 'quantum_harmony.inference';
 const $ = id => document.getElementById(id);
-let result = null, selectedStep = 0, audio = null, playGeneration = 0;
+let result = null, selectedStep = 0, audio = null, playGeneration = 0, masterGain = null;
 const parsePythonJSON = value => JSON.parse(typeof value === 'string' ? value : value.toJs());
 const pct = x => `${(100*x).toFixed(1)}%`;
 function randomSeed(){const a=new Uint32Array(2);crypto.getRandomValues(a);return Number((BigInt(a[0])<<21n)^BigInt(a[1]&0x1fffff));}
@@ -49,10 +49,22 @@ async function generate(useRandomSeed=false){
 const noteFrequency=midi=>440*Math.pow(2,(midi-69)/12);
 function voiceEnvelope(ctx,master,midi,start,duration,sound,gainScale=1){
   const osc=ctx.createOscillator(),gain=ctx.createGain();
-  if(sound==='strings'){osc.type='sawtooth';gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(.045*gainScale,start+Math.min(.18,duration*.2));gain.gain.setValueAtTime(.04*gainScale,Math.max(start+.2,start+duration-.18));gain.gain.linearRampToValueAtTime(0,start+duration);}
-  else if(sound==='synth'){osc.type='square';gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(.035*gainScale,start+.015);gain.gain.exponentialRampToValueAtTime(.008*gainScale,start+Math.max(.04,duration-.05));gain.gain.linearRampToValueAtTime(0,start+duration);}
-  else{osc.type='triangle';gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(.07*gainScale,start+.008);gain.gain.exponentialRampToValueAtTime(.012*gainScale,start+Math.max(.04,duration*.72));gain.gain.linearRampToValueAtTime(0,start+duration);}
-  osc.frequency.value=noteFrequency(midi);osc.connect(gain);gain.connect(master);osc.start(start);osc.stop(start+duration+.02);return{osc,gain};
+  const spec={piano:{attack:.004,decay:.65,release:.13,struck:true,type:'triangle',level:.07},
+    strings:{attack:.015,decay:.08,sustain:.88,release:.12,swell:.10,type:'sawtooth',level:.04},
+    flute:{attack:.075,decay:.09,sustain:.84,release:.075,swell:.20,type:'sine',level:.07},
+    percussion:{attack:.002,decay:.16,release:.05,struck:true,type:'sine',level:.08},
+    synth:{attack:.025,decay:.15,sustain:.65,release:.08,swell:.08,type:'triangle',level:.05}}[sound];
+  const attack=Math.min(spec.attack,duration*.22),decay=Math.min(spec.decay,duration*.22),release=Math.min(spec.release,Math.max(.008,duration*.4)),level=spec.level*gainScale;
+  osc.type=spec.type;gain.gain.setValueAtTime(0,start);
+  const amplitude=time=>{
+    if(time<attack)return .5-.5*Math.cos(Math.PI*time/attack);
+    if(spec.struck)return Math.exp(-(time-attack)/(spec.decay*2**((60-midi)/48)));
+    const phase=Math.max(0,Math.min(1,(time-attack-decay)/Math.max(.001,duration-attack-decay)));
+    return (1-(1-spec.sustain)*Math.min(1,(time-attack)/decay))*(1+spec.swell*Math.sin(Math.PI*phase))*(1-.22*phase**3);
+  };
+  for(const time of [...new Set([attack,...Array.from({length:48},(_,i)=>duration*(i+1)/48)])].sort((a,b)=>a-b))gain.gain.linearRampToValueAtTime(level*amplitude(time),start+time);
+  for(let i=1;i<=8;i++)gain.gain.linearRampToValueAtTime(level*amplitude(duration)*(.5+.5*Math.cos(Math.PI*i/8)),start+duration+release*i/8);
+  osc.frequency.value=noteFrequency(midi);osc.connect(gain);gain.connect(master);osc.start(start);osc.stop(start+duration+release);return{osc,gain};
 }
 function scheduleChord(ctx,master,chord,at,beat,pattern,sound){
   const nodes=[],notes=chord.midi,add=(midi,start,duration,scale=1)=>nodes.push(voiceEnvelope(ctx,master,midi,start,duration,sound,scale));add(chord.bass_midi,at,Math.max(.25,3.6*beat),.9);
@@ -61,10 +73,11 @@ function scheduleChord(ctx,master,chord,at,beat,pattern,sound){
   else notes.forEach(midi=>add(midi,at,3.65*beat,1));return nodes;
 }
 async function play(){
-  if(!result)return;stopPlayback();const generation=++playGeneration;audio=new AudioContext();await audio.resume();const bpm=Number($('tempo').value),beat=60/bpm,sound=$('sound').value,pattern=$('pattern').value,master=audio.createGain();master.gain.value=.75;master.connect(audio.destination);const start=audio.currentTime+.08;
+  if(!result)return;stopPlayback();const generation=++playGeneration;audio=new AudioContext();await audio.resume();if(generation!==playGeneration||!audio)return;const bpm=Number($('tempo').value),beat=60/bpm,sound=$('sound').value,pattern=$('pattern').value,master=audio.createGain();masterGain=master;master.gain.value=Number($('volume').value)/100;master.connect(audio.destination);const start=audio.currentTime+.08;
   result.chords.forEach((chord,i)=>scheduleChord(audio,master,chord,start+i*4*beat,beat,pattern,sound));$('playback-status').textContent=`Playing ${result.chords.length} generated chords · ${bpm} BPM · ${sound} · ${pattern}`;
   const timer=()=>{if(generation!==playGeneration||!audio)return;const bar=Math.floor((audio.currentTime-start)/(4*beat));if(bar>=0&&bar<result.chords.length&&bar!==selectedStep){selectedStep=bar;renderTimeline();renderInspector();}if(bar>=result.chords.length){stopPlayback();return;}requestAnimationFrame(timer);};requestAnimationFrame(timer);
 }
-function stopPlayback(){playGeneration++;if(audio){try{audio.close();}catch{}audio=null;}$('playback-status').textContent='Stopped';}
-function exportJSON(){if(!result)return;const payload=JSON.stringify({...result,playback:{tempo_bpm:Number($('tempo').value),sound:$('sound').value,pattern:$('pattern').value,quantum_shots_unchanged:true}},null,2);$('export-panel').hidden=false;$('export-payload').value=payload;console.log(JSON.stringify({event:'quantum-harmony-export',encoding:'utf-8',payload}));}
+function stopPlayback(){playGeneration++;masterGain=null;if(audio){try{audio.close();}catch{}audio=null;}$('playback-status').textContent='Stopped';}
+function exportJSON(){if(!result)return;const payload=JSON.stringify({...result,playback:{tempo_bpm:Number($('tempo').value),sound:$('sound').value,pattern:$('pattern').value,volume:Number($('volume').value)/100,quantum_shots_unchanged:true}},null,2);$('export-panel').hidden=false;$('export-payload').value=payload;console.log(JSON.stringify({event:'quantum-harmony-export',encoding:'utf-8',payload}));}
 $('generate').onclick=()=>generate(false);$('variation').onclick=()=>generate(true);$('play').onclick=play;$('stop').onclick=stopPlayback;$('export').onclick=exportJSON;$('tempo').oninput=()=>$('tempo-value').textContent=`${$('tempo').value} BPM`;window.addEventListener('pagehide',stopPlayback);renderInspector();
+$('volume').oninput=()=>{const value=Number($('volume').value)/100;$('volume-value').textContent=$('volume').value+'%';if(masterGain&&audio){masterGain.gain.cancelScheduledValues(audio.currentTime);masterGain.gain.setValueAtTime(masterGain.gain.value,audio.currentTime);masterGain.gain.linearRampToValueAtTime(value,audio.currentTime+.025);}};

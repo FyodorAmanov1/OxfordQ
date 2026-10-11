@@ -1,6 +1,7 @@
 """Fixed-grid source playback, kept separate from expressive composition."""
 from orchestrator.instruments import profile
 from orchestrator.models import Part, NoteEvent
+from orchestrator.performance import performance_for
 from .models import ComposedScore
 from .compiler import validate_score
 
@@ -36,6 +37,9 @@ def raw_reference(request, bank, timeline):
         parts.append(part)
     score = ComposedScore(title="Fixed-grid source reference", parts=parts, lead_track=request.lead_track,
         timeline=timeline.model_copy(deep=True), source_bank_sha256=bank.digest,
-        planner="raw", occurrences=occurrences)
+        planner="raw", occurrences=occurrences,
+        performance={p.id: performance_for(p.instrument) for p in parts})
+    for instrument, volume in request.part_volumes.items():
+        score.performance[instrument].volume = volume
     validate_score(score, bank, request)
     return score
