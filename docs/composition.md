@@ -46,8 +46,10 @@ comparison commands and library limitations.
 
 These are inspired ensemble studies, not models trained to imitate these composers.
 Names do not imply authentic counterpoint, sonata form, impressionist harmony or
-virtuoso piano writing. The default ensemble is flute, clarinet, violin, cello and
-double bass. It spans multiple octaves within instrument ranges; eight octaves per
+virtuoso piano writing. The default ensemble is flute, clarinet, violin, cello,
+double bass and piano. The piano has a bass foundation, upper chords or arpeggios,
+strike dynamics and pedal changes at harmonic boundaries. The ensemble spans multiple
+octaves within instrument ranges; eight octaves per
 instrument would be physically inappropriate.
 
 ## Data flow and music decisions

@@ -13,4 +13,5 @@ examples/midi/
 .test-*/
 build/
 dist/
+submission-*/
 .env.*

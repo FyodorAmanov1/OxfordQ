@@ -19,7 +19,7 @@ def main(argv=None):
     parser.add_argument("--bars", type=int, help="Override style defaults (roughly one minute)")
     parser.add_argument("--key")
     parser.add_argument("--model", default="gemini-3.8-flash")
-    parser.add_argument("--instruments", nargs="+", default=["flute", "clarinet", "violin_1", "cello", "double_bass"])
+    parser.add_argument("--instruments", nargs="+", default=["flute", "clarinet", "violin_1", "cello", "double_bass", "piano"])
     parser.add_argument("--lead", default="flute")
     parser.add_argument("--part-volume", action="append", default=[], metavar="INSTRUMENT=LEVEL",
                         help="Per-instrument volume from 0 to 1; repeat for multiple instruments")

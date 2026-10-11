@@ -17,7 +17,7 @@ class CompositionRequest(Schema):
     seed: int = Field(default=42, ge=0)
     bars: int = Field(default=24, ge=12, le=96)
     instruments: list[str] = Field(default_factory=lambda: [
-        "flute", "clarinet", "violin_1", "cello", "double_bass"], min_length=2, max_length=15)
+        "flute", "clarinet", "violin_1", "cello", "double_bass", "piano"], min_length=2, max_length=15)
     lead_track: str = "flute"
     key: str | None = None
     planner: Literal["local", "gemini"] = "local"
