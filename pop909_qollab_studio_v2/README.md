@@ -97,3 +97,7 @@ The Qollab-provided IonQ browser route was previously blocked at the browser tra
 This project demonstrates a quantum-first generative harmony layer and transparent quantum measurement workflow. It does **not** claim quantum advantage, superior generalization, or superior musical quality over classical models.
 
 The quantum component generates harmony; audio rendering and the rest of the browser experience are classical.
+
+## Acknowledgements
+
+This effort is supported by Qollab & IonQ.
