@@ -44,7 +44,10 @@ amplitudes. Backend failures are reported without simulator substitution.
 
 ## What we can claim
 
-The composer runs end to end locally with Qiskit. Tests establish unitary circuit
+The composer runs end to end locally, on Qollab's free built-in simulator, and
+on its free IonQ Forte 1 simulator. Both authenticated platform tests generated
+complete 64-bar, 2:33 compositions, with one six-qubit backend job per run.
+Tests establish unitary circuit
 equivalence, phase-dependent memory and one selected-backend job per generation.
 Browser playback uses an acoustic piano sample bank and exports a real WAV and
 MIDI. These findings demonstrate a compositional mechanism, not a quantum
@@ -63,6 +66,6 @@ Florestan. Original project code and documentation use the MIT license.
 Source branch: [ShiQiu/quantum-graph-composer](https://github.com/FyodorAmanov1/OxfordQ/tree/ShiQiu/quantum-graph-composer/components/quantum_graph_composer).
 
 **Team completion before publication:** add the public 2–3 minute demo-video
-link, disclose any work predating the build window, and record the result of
-the first authenticated Qollab local-simulator test. Local verification does
-not represent an IonQ cloud execution.
+link and disclose any work predating the build window. Actual built-in and IonQ
+simulator verification records are retained in the repository. Physical hardware
+was not used, and this private test draft is not a final hackathon submission.

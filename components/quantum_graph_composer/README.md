@@ -40,10 +40,12 @@ That continuation is not a claim that IonQ returned amplitudes or that the entir
 piece ran on the selected remote simulator. There is no automatic fallback if
 the selected backend fails. Neither Aer nor a native audio library is required.
 
-This deployment follows Qollab's documented runtime and free-simulator interface.
-Local Qiskit execution and browser playback have been tested; authenticated
-execution of this new component on Qollab and IonQ remains to be checked by the
-team before publication. See [VALIDATION.md](VALIDATION.md).
+Authenticated execution has been verified on **Qollab's free built-in simulator
+and free IonQ Forte 1 simulator**. Both generated complete 64-bar, 2:33 pieces;
+their actual score/MIDI exports and execution metadata were retained. The button
+uses a sandbox-compatible click handler, and the page keeps Qollab's Run active
+until Stop so its remote-job bridge remains available. See
+[VALIDATION.md](VALIDATION.md) for the separate verification records.
 
 ## Judges: run locally
 
