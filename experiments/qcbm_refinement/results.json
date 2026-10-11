@@ -1,0 +1,334 @@
+{
+  "generation_utc": "2026-10-11T16:06:54.569036+00:00",
+  "analysis": {
+    "improved": {
+      "A_reprise_pitch_class_agreement": 0.6875,
+      "accented_duration_chord_tone_fraction": 0.7065153867056777,
+      "distinct_note_lengths": 20,
+      "distinct_velocities": 24,
+      "final_cadence": [
+        "V7",
+        "I"
+      ],
+      "final_pitch": 60,
+      "gate_fraction_range": [
+        0.7399999999999999,
+        0.98
+      ],
+      "interval_histogram": {
+        "-1": 4,
+        "-2": 7,
+        "-3": 6,
+        "-4": 3,
+        "-5": 5,
+        "-7": 1,
+        "0": 12,
+        "1": 1,
+        "2": 8,
+        "3": 9,
+        "4": 1,
+        "5": 4
+      },
+      "maximum_bass_jump": 5,
+      "mean_abs_bass_interval": 2.533333333333333,
+      "mean_abs_melody_interval": 2.4262295081967213,
+      "mean_chord_nearest_voice_motion": 1.3472222222222223,
+      "melody_leaps_over_octave": 0,
+      "nonchord_events": 24,
+      "phrase_boundaries": [
+        {
+          "bar": 3,
+          "breath_beats": 0.1349999999999998,
+          "chord": "V",
+          "following_jump": 5,
+          "pitch": 67
+        },
+        {
+          "bar": 7,
+          "breath_beats": 0.13500000000000156,
+          "chord": "V7",
+          "following_jump": 3,
+          "pitch": 74
+        },
+        {
+          "bar": 11,
+          "breath_beats": 0.17999999999999972,
+          "chord": "V7",
+          "following_jump": 1,
+          "pitch": 71
+        },
+        {
+          "bar": 15,
+          "breath_beats": 0.03999999999999915,
+          "chord": "I",
+          "following_jump": null,
+          "pitch": 60
+        }
+      ],
+      "preserved_source_repetitions": 20,
+      "rest_events": 2,
+      "rhythm_patterns": 12,
+      "sounding_notes": 62,
+      "stepwise_resolved_nonchord_events": 7,
+      "sustained_nonchord_semitone_overlap_note_beats": 0.0,
+      "velocity_range": [
+        63,
+        93
+      ]
+    },
+    "limitations": [
+      "One fixed piece, no listening-quality ranking or quantum musical-quality claim",
+      "Chord membership and semitone overlap are limited tonal proxies, not an auditory clash detector",
+      "Sevenths count as chord tones here; expanded vocabularies affect compatibility diagnostics",
+      "Voice motion is symmetric nearest-tone distance, not perceptual voice tracking",
+      "Literal pitch-class agreement measures repeated slots, not human motif recognition",
+      "All measured changes are classical arrangement decisions"
+    ],
+    "original": {
+      "A_reprise_pitch_class_agreement": 0.71875,
+      "accented_duration_chord_tone_fraction": 0.5671466441739969,
+      "distinct_note_lengths": 5,
+      "distinct_velocities": 1,
+      "final_cadence": [
+        "V",
+        "I"
+      ],
+      "final_pitch": 72,
+      "gate_fraction_range": [
+        0.9,
+        1.0
+      ],
+      "interval_histogram": {
+        "-1": 4,
+        "-2": 8,
+        "-3": 6,
+        "-4": 3,
+        "-5": 5,
+        "0": 12,
+        "1": 1,
+        "2": 8,
+        "3": 7,
+        "4": 1,
+        "5": 5,
+        "8": 1
+      },
+      "maximum_bass_jump": 7,
+      "mean_abs_bass_interval": 4.419354838709677,
+      "mean_abs_melody_interval": 2.459016393442623,
+      "mean_chord_nearest_voice_motion": 1.3555555555555554,
+      "melody_leaps_over_octave": 0,
+      "nonchord_events": 29,
+      "phrase_boundaries": [
+        {
+          "bar": 3,
+          "breath_beats": 0.0,
+          "chord": "V",
+          "following_jump": 5,
+          "pitch": 67
+        },
+        {
+          "bar": 7,
+          "breath_beats": 0.0,
+          "chord": "V",
+          "following_jump": 2,
+          "pitch": 67
+        },
+        {
+          "bar": 11,
+          "breath_beats": 0.0,
+          "chord": "V",
+          "following_jump": 1,
+          "pitch": 71
+        },
+        {
+          "bar": 15,
+          "breath_beats": 0.0,
+          "chord": "I",
+          "following_jump": null,
+          "pitch": 72
+        }
+      ],
+      "preserved_source_repetitions": 20,
+      "rest_events": 2,
+      "rhythm_patterns": 4,
+      "sounding_notes": 62,
+      "stepwise_resolved_nonchord_events": 9,
+      "sustained_nonchord_semitone_overlap_note_beats": 3.1500000000000004,
+      "velocity_range": [
+        82,
+        82
+      ]
+    },
+    "subjective_listening": {
+      "ratings": null,
+      "status": "Pending user assessment",
+      "winner": null
+    }
+  },
+  "media_verification": {
+    "verified_utc": "2026-10-11T16:07:40.408131+00:00",
+    "status": "passed",
+    "files": [
+      {
+        "name": "original-melody",
+        "seconds": 32,
+        "midi_sha256": "9c7ca0457a1a869f506a1d29af56b2329d05227b0113178ecaac03a0a0cc17fd",
+        "wav_sha256": "78958556054540e84036028282b01be2c8caa2649b28b2812ed2873051a8d198",
+        "rms": 0.1399673538426757,
+        "peak": 0.22406005859375
+      },
+      {
+        "name": "original-arranged",
+        "seconds": 32,
+        "midi_sha256": "72094b9f5bd7c15f395f507f3481ee5dc1c2fd5943fc5199c5834d5351686a2a",
+        "wav_sha256": "e5413d76ca68f5b41d40c89b197b3b5ab15ccfb3348f6b42d737a20787544090",
+        "rms": 0.16001278447703543,
+        "peak": 0.43212890625
+      },
+      {
+        "name": "improved-melody",
+        "seconds": 32,
+        "midi_sha256": "f6b3a813b3c71ce1171b40ff5e65dc1428bd4ddb36107fc805f8a0d3558a41b7",
+        "wav_sha256": "126f0f82d9bb7ac59aa526b1297bc4ec9563360e9e540fdfae5caff211a54705",
+        "rms": 0.13995508008926533,
+        "peak": 0.275970458984375
+      },
+      {
+        "name": "improved-arranged",
+        "seconds": 32,
+        "midi_sha256": "33ba5acb41935481496d9a465cb03515c24ead6c0af7ee31eb4ff744617af16c",
+        "wav_sha256": "2c2d5780bbe58838aafe34e3e11db508704ffd169abb007a1806918a4d6ad379",
+        "rms": 0.16000054563530045,
+        "peak": 0.53857421875
+      }
+    ],
+    "preserved_raw_sha256": "be635526814540453ae31e34266207e4c59dd61468c5118bb3b0159ea389a5bb",
+    "original_outputs_unchanged": true,
+    "source_lineage_passed": true,
+    "pitch_class_changes": [
+      "refinement:b07:n3",
+      "refinement:b11:n3",
+      "refinement:b15:n3"
+    ],
+    "melody_unchanged_by_accompaniment": true,
+    "loudness_delta_db_less_than": 0.01,
+    "browser": "Separate actual browser checks required",
+    "subjective_listening": "Pending user assessment"
+  },
+  "browser_verification": {
+    "originalMelody": {
+      "duration": 32,
+      "error": null,
+      "paused": false,
+      "time": 0.142884
+    },
+    "improvedMelody": [
+      {
+        "duration": 32,
+        "error": null,
+        "paused": true,
+        "seekable": 32,
+        "src": "original-melody.wav",
+        "time": 1.240459
+      },
+      {
+        "duration": 32,
+        "error": null,
+        "paused": true,
+        "seekable": 32,
+        "src": "original-arranged.wav",
+        "time": 0
+      },
+      {
+        "duration": 32,
+        "error": null,
+        "paused": false,
+        "seekable": 32,
+        "src": "improved-melody.wav",
+        "time": 0.228758
+      },
+      {
+        "duration": 32,
+        "error": null,
+        "paused": true,
+        "seekable": 32,
+        "src": "improved-arranged.wav",
+        "time": 0
+      }
+    ],
+    "switchPaused": true,
+    "originalArranged": {
+      "error": null,
+      "paused": false,
+      "time": 0.116271
+    },
+    "improvedArranged": [
+      {
+        "error": null,
+        "paused": true,
+        "src": "original-melody.wav",
+        "time": 1.240459
+      },
+      {
+        "error": null,
+        "paused": true,
+        "src": "original-arranged.wav",
+        "time": 1.183867
+      },
+      {
+        "error": null,
+        "paused": true,
+        "src": "improved-melody.wav",
+        "time": 0.253186
+      },
+      {
+        "error": null,
+        "paused": false,
+        "src": "improved-arranged.wav",
+        "time": 0.204523
+      }
+    ],
+    "seek": {
+      "paused": true,
+      "time": 23.335209
+    },
+    "resume": {
+      "paused": false,
+      "time": 23.632304
+    },
+    "provenance": {
+      "backend_jobs": 0,
+      "events": 64,
+      "motifs": 16,
+      "schema": "oxfordq.qcbm-refinement.v1",
+      "sourceHash": "be635526814540453ae31e34266207e4c59dd61468c5118bb3b0159ea389a5bb",
+      "status": "PRE-GENERATED",
+      "tokens": 64,
+      "visible": true
+    },
+    "verified_utc": "2026-10-11T16:15:38.610Z",
+    "downloads": [
+      {
+        "name": "improved-arranged.mid",
+        "path": "improved-arranged.mid"
+      }
+    ],
+    "remaining_downloads": "Second browser download timed out; subsequent exports not attempted. All four local MIDI files decoded and validated separately.",
+    "subjective_listening": "Pending user assessment"
+  },
+  "tests": {
+    "combined_python": "154 passed in 28.53s",
+    "new_tests": "8 passed in 4.34s",
+    "node": [
+      "ui_checks passed 16:07:35.355 UTC",
+      "contract_checks passed 16:07:35.730 UTC",
+      "projection_checks passed 16:07:44.166 UTC"
+    ],
+    "original_cli_examples": "Both passed; rules, no audio, provider disabled"
+  },
+  "preservation": {
+    "existing_files": 215,
+    "changed": 0
+  },
+  "downloaded_improved_arranged_sha256": "33ba5acb41935481496d9a465cb03515c24ead6c0af7ee31eb4ff744617af16c"
+}
