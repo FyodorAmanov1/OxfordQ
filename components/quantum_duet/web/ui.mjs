@@ -1,3 +1,4 @@
+import {JOINT_CONTRACT,validateJoint} from './joint-cue-contract.mjs';
 import {playbackProjection,validateSource} from './playback-projection.mjs';
 import {freezeJSON, envelopeView, arrangedPlayback, exportEnvelope, readEnvelope} from './run-contract.mjs';
 const $ = id => document.getElementById(id);
@@ -111,7 +112,7 @@ function download(name,type,body) {
 }
 
 export function mountDuet(run, environment, options = {}) {
-  let take=null,requested=false,envelope=null,rawText=null,arranged=null,projection=null,sourceText=null,loading=false,closed=false;
+  let take=null,requested=false,joint=null,envelope=null,rawText=null,arranged=null,projection=null,sourceText=null,loading=false,closed=false;
   let finish, updateMusicMode=()=>{};
   const generated = new Promise(resolve => { finish = resolve; });
   const method=()=>$('method').value;
@@ -153,7 +154,7 @@ export function mountDuet(run, environment, options = {}) {
   $('environment').textContent=environment;
   const controls = enabled => {for(const id of ['play','stop','midi','json'])$(id).disabled=!enabled;};
   const reportError = error => {
-    audio.stop();take=null;envelope=null;arranged=null;rawText=null;controls(false);
+    audio.stop();take=null;joint=null;envelope=null;arranged=null;rawText=null;controls(false);
     $('music-mode').value='raw';$('music-mode').options[1].disabled=true;
     $('status').dataset.error='true';$('status').textContent=`Result failed: ${error.message}. No fallback or automatic retry.`;
     for(const id of ['alice-lane','bob-lane'])$(id).replaceChildren();
@@ -163,8 +164,10 @@ export function mountDuet(run, environment, options = {}) {
   };
   const install = async (value, fixtureLabel = '') => {
     audio.stop();const supplied=readEnvelope(value);rawText=supplied.rawText;
-    const parsed=supplied.result;envelope=null;arranged=null;projection=supplied.projection;sourceText=supplied.sourceText;
-    if(parsed.contract_version!==undefined) {
+    const parsed=supplied.result;joint=null;envelope=null;arranged=null;projection=supplied.projection;sourceText=supplied.sourceText;
+    if(parsed.contract_version===JOINT_CONTRACT) {
+      take=await validateJoint(parsed);joint=freezeJSON(parsed);
+    } else if(parsed.contract_version!==undefined) {
       take=envelopeView(parsed);envelope=freezeJSON(parsed);await validateSource(envelope,sourceText);
     } else {
       take=assertTake(parsed);freezeJSON(take);
@@ -180,17 +183,17 @@ export function mountDuet(run, environment, options = {}) {
     }
     const stats=take.statistics,execution=take.execution;
     $('tempo').value=String(envelope?.tempo_bpm??120);
-    $('estimate').textContent=percent(stats.expected_success);
+    $('estimate').textContent=stats.expected_success===null?'Unavailable':percent(stats.expected_success);
     $('quantum-reference').textContent=percent(take.references.quantum_exact);
-    $('interval').textContent=`${stats.interval_method}: ${percent(stats.success_interval[0])}–${percent(stats.success_interval[1])}`;
-    const origin=envelope?execution.data_status.toUpperCase():'LIVE legacy take';
-    $('allocation').textContent=`${stats.total_independent_shots.toLocaleString()} ${envelope?.execution.data_status==='recorded'?'historical':'returned'} CHSH shots · ${stats.shots_per_setting} per setting. QCBM/excerpt excluded. Conditional independence assumed; not hardware-certified.`;
+    $('interval').textContent=stats.success_interval?`${stats.interval_method}: ${percent(stats.success_interval[0])}–${percent(stats.success_interval[1])}`:`Conditional statistics unavailable: ${stats.unavailable_reason}`;
+    const origin=joint?(execution.is_ionq_simulator?'LIVE IonQ simulator coordination':'LIVE supplied simulator coordination'):envelope?execution.data_status.toUpperCase():'LIVE legacy take';
+    $('allocation').textContent=joint?`${stats.total_independent_shots} returned joint shots  /  ${stats.allocation.map(r=>'N'+r.x+r.y+'='+r.shots).join(', ')}. Equal-setting estimate; pooled ${(stats.pooled_success*100).toFixed(2)}%. Conditional independence assumed; not hardware-certified.`:`${stats.total_independent_shots.toLocaleString()} ${envelope?.execution.data_status==='recorded'?'historical':'returned'} CHSH shots · ${stats.shots_per_setting} per setting. QCBM/excerpt excluded. Conditional independence assumed; not hardware-certified.`;
     $('evidence-origin').textContent=`${origin} · all CHSH counts`;
-    $('melody-origin').textContent=envelope?`${origin} · ${execution.mode}`:take.base_melody.generated_now?'Current-run QCBM melody':'Recorded M3A QCBM melody';
+    $('melody-origin').textContent=joint?'RECORDED QCBM melody  /  zero new motif jobs':envelope?`${origin} · ${execution.mode}`:take.base_melody.generated_now?'Current-run QCBM melody':'Recorded M3A QCBM melody';
     $('angles').textContent='Trained angles [A0, A1, B0, B1] in radians: '+take.models.bell_angles_radians.map(x=>x.toFixed(6)).join(', ');
     $('status').dataset.error='false';
-    $('status').textContent=envelope?`${origin} ${fixtureLabel} · ${execution.backend_name} · run ${envelope.run_id} · ${execution.backend_run_calls_this_replay} backend calls this replay / zero new shots from loading. Historical/original calls ${execution.backend_run_calls}. Counts order reconstructed.`:`LIVE legacy take · ${execution.backend_name} · ${execution.execution_mode} · ${execution.circuit_count} circuits / one job. Job ${execution.job_id}. Run/round envelope integration pending.`;
-    $('provenance').textContent=JSON.stringify(envelope?{run_id:envelope.run_id,execution:{...execution,experiments:undefined},models:envelope.models,raw_source:envelope.raw_source,errors:envelope.errors,fallback:envelope.fallback,playback_projection:projection,arranged:envelope.arranged?{...envelope.arranged,events:undefined}:null}:{execution,models:take.models,identity:'Legacy bridge has no shared envelope; original JSON retained'},null,2);
+    $('status').textContent=joint?`${origin} + RECORDED QCBM melody  /  ${execution.backend_name}  /  ${execution.backend_class}  /  one circuit / one job  /  ${execution.returned_shots} returned shots  /  job ${execution.job_id}`:envelope?`${origin} ${fixtureLabel} · ${execution.backend_name} · run ${envelope.run_id} · ${execution.backend_run_calls_this_replay} backend calls this replay / zero new shots from loading. Historical/original calls ${execution.backend_run_calls}. Counts order reconstructed.`:`LIVE legacy take · ${execution.backend_name} · ${execution.execution_mode} · ${execution.circuit_count} circuits / one job. Job ${execution.job_id}. Run/round envelope integration pending.`;
+    $('provenance').textContent=JSON.stringify(joint?joint:envelope?{run_id:envelope.run_id,execution:{...execution,experiments:undefined},models:envelope.models,raw_source:envelope.raw_source,errors:envelope.errors,fallback:envelope.fallback,playback_projection:projection,arranged:envelope.arranged?{...envelope.arranged,events:undefined}:null}:{execution,models:take.models,identity:'Legacy bridge has no shared envelope; original JSON retained'},null,2);
     const provenance=()=>{
       if($('music-mode').value==='raw') {
         $('music-provenance').textContent=`RAW · direct local mapping, central arranger bypassed. ${arrangedMessage}`;
@@ -237,7 +240,7 @@ export function mountDuet(run, environment, options = {}) {
   },'Qollab built-in simulator fixture');
   $('import-result').onclick=()=>load(()=>{
     const text=$('import-payload').value;
-    if(!readEnvelope(text).result.contract_version)throw Error('A qm.run-result envelope is required');
+    if(!readEnvelope(text).result.contract_version)throw Error('A versioned run-result is required');
     return text;
   });
   $('generate').onclick=async()=>{
@@ -265,8 +268,8 @@ export function mountDuet(run, environment, options = {}) {
   $('method').onchange=()=>{audio.stop();updateMusicMode();draw();};
   $('tempo').onchange=()=>{audio.stop();frame(0);};
   for(const voice of ['alice','bob'])$('mute-'+voice).onchange=()=>audio.mute(voice,$('mute-'+voice).checked);
-  $('midi').onclick=()=>{try{download(`quantum-duet-${$('music-mode').value}-${method()}.mid`,'audio/midi',midiBytes(events(),tempo(),envelope?{run_id:envelope.run_id,method:method(),mode:$('music-mode').value,raw_source:envelope.raw_source,round_ids:envelope.rounds.map(r=>r.round_id),transformation_ids:$('music-mode').value==='arranged'?(projection?.policies[method()].transformation_ids??envelope.arranged.transformation_ids):[]}:null));}catch(error){$('playback-status').textContent=error.message;}};
-  $('json').onclick=()=>download('quantum-duet-run.json','application/json',exportEnvelope(rawText,envelope||take,{method:method(),mode:$('music-mode').value,tempo_bpm:Number($('tempo').value),mute_alice:$('mute-alice').checked,mute_bob:$('mute-bob').checked},projection,sourceText));
+  $('midi').onclick=()=>{try{download(`quantum-duet-${$('music-mode').value}-${method()}.mid`,'audio/midi',midiBytes(events(),tempo(),joint?{run_id:joint.run_id,contract_version:JOINT_CONTRACT,job_id:joint.execution.job_id,histogram_sha256:joint.histogram_sha256,method:method(),mode:'raw',round_ids:joint.rounds[method()].map(r=>r.round_id)}:envelope?{run_id:envelope.run_id,method:method(),mode:$('music-mode').value,raw_source:envelope.raw_source,round_ids:envelope.rounds.map(r=>r.round_id),transformation_ids:$('music-mode').value==='arranged'?(projection?.policies[method()].transformation_ids??envelope.arranged.transformation_ids):[]}:null));}catch(error){$('playback-status').textContent=error.message;}};
+  $('json').onclick=()=>download('quantum-duet-run.json','application/json',exportEnvelope(rawText,joint||envelope||take,{method:method(),mode:$('music-mode').value,tempo_bpm:Number($('tempo').value),mute_alice:$('mute-alice').checked,mute_bob:$('mute-bob').checked},projection,sourceText));
   window.addEventListener('pagehide',()=>{closed=true;audio.stop();finish();});
   // Keep Qollab's Run alive for playback/export console messages until Stop.
   // The requested guard still permits exactly one backend call on this page.
