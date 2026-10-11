@@ -1,12 +1,5 @@
-"""Interactive POP909 quantum harmony inference for Qollab.
+"Interactive POP909 quantum harmony inference for Qollab."
 
-Quantum boundary:
-- Coarse 3-qubit and resolver 4-qubit PQCs are executed on the Qollab-supplied backend.
-- Each backend submission contains exactly ONE circuit.
-- Measured histograms are cached per context during the page session.
-- Harmonic-colour controls are classical post-filters applied after quantum measurement.
-- Rare OTHER fallback is classical, using the exported POP909 frequency table.
-"""
 from __future__ import annotations
 
 import json
@@ -16,15 +9,11 @@ from pathlib import Path
 import numpy as np
 from qiskit import QuantumCircuit, transpile
 
-COARSE = ["I", "ii", "iii", "IV", "V", "vi", "vii°", "OTHER"]
-RESOLVER = [
-    "V:sus", "IV:min", "II:dom", "III:dom",
-    "bVII:maj", "II:maj", "V:dom", "I:dom",
-    "V:min", "III:maj", "bVI:maj", "VI:maj",
-    "VI:dom", "#IV:hdim", "#IV:dim", "RARE_OTHER",
-]
 MODEL_PATH = Path("data/models.json")
 _CACHE = {"coarse": {}, "resolver": {}}
+
+MAJOR_COARSE = ["I", "ii", "iii", "IV", "V", "vi", "vii°", "OTHER"]
+MINOR_COARSE = ["i", "III", "iv", "v", "V", "VI", "VII", "OTHER"]
 
 MAJOR_SCALES = {
     "C":  ["C", "D", "E", "F", "G", "A", "B"],
@@ -40,6 +29,7 @@ MAJOR_SCALES = {
     "Bb": ["Bb", "C", "D", "Eb", "F", "G", "A"],
     "B":  ["B", "C#", "D#", "E", "F#", "G#", "A#"],
 }
+
 NOTE_PC = {
     "C":0, "B#":0, "C#":1, "Db":1, "D":2, "D#":3, "Eb":3,
     "E":4, "Fb":4, "E#":5, "F":5, "F#":6, "Gb":6, "G":7,
@@ -48,25 +38,51 @@ NOTE_PC = {
 FLAT_NAMES = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"]
 SHARP_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
 FLAT_KEYS = {"C", "Db", "Eb", "F", "Ab", "Bb"}
-DIATONIC_DEGREE = {"I":0, "ii":1, "iii":2, "IV":3, "V":4, "vi":5, "vii°":6}
-DIATONIC_QUALITY = {"I":"maj", "ii":"min", "iii":"min", "IV":"maj", "V":"maj", "vi":"min", "vii°":"dim"}
+
+MAJOR_DIATONIC_DEGREE = {"I":0, "ii":1, "iii":2, "IV":3, "V":4, "vi":5, "vii°":6}
+MAJOR_DIATONIC_QUALITY = {"I":"maj", "ii":"min", "iii":"min", "IV":"maj", "V":"maj", "vi":"min", "vii°":"dim"}
+
+MINOR_CORE_DEGREE = {"i":0, "III":2, "iv":3, "v":4, "V":4, "VI":5, "VII":6}
+MINOR_CORE_QUALITY = {"i":"min", "III":"maj", "iv":"min", "v":"min", "V":"maj", "VI":"maj", "VII":"maj"}
+
 ROMAN_DEGREE = {"I":0, "II":1, "III":2, "IV":3, "V":4, "VI":5, "VII":6}
-QUALITY_SUFFIX = {"maj":"", "min":"m", "dom":"7", "dim":"dim", "hdim":"m7b5", "aug":"+", "sus":"sus4", "power":"5"}
+MINOR_INTERVALS = [0, 2, 3, 5, 7, 8, 10]
+
+QUALITY_SUFFIX = {
+    "maj":"", "min":"m", "dom":"7", "dim":"dim",
+    "hdim":"m7b5", "aug":"+", "sus":"sus4", "power":"5",
+}
 QUALITY_INTERVALS = {
     "maj":[0,4,7], "min":[0,3,7], "dom":[0,4,7,10], "dim":[0,3,6],
     "hdim":[0,3,6,10], "aug":[0,4,8], "sus":[0,5,7], "power":[0,7],
 }
 
 
-def _load_payload():
+def _load_payload(mode):
     if not MODEL_PATH.is_file():
         raise FileNotFoundError("data/models.json is missing. Run tools/export_models.py first.")
+
     payload = json.loads(MODEL_PATH.read_text(encoding="utf-8"))
-    if payload.get("coarse_contexts") != COARSE:
-        raise ValueError("models.json coarse context order is invalid")
-    if payload.get("resolver_labels") != RESOLVER:
-        raise ValueError("models.json resolver label order is invalid")
-    return payload
+    mode = str(mode).lower()
+
+    if payload.get("schema_version") == 3 and "modes" in payload:
+        if mode not in payload["modes"]:
+            raise ValueError(f"Unsupported mode {mode!r}")
+        model = payload["modes"][mode]
+    elif payload.get("schema_version") == 2 and mode == "major":
+        model = payload
+    else:
+        raise ValueError("models.json does not contain the requested trained mode")
+
+    expected = MAJOR_COARSE if mode == "major" else MINOR_COARSE
+    if model.get("coarse_contexts") != expected:
+        raise ValueError(f"models.json {mode} coarse context order is invalid")
+
+    resolver = model.get("resolver_labels", [])
+    if len(resolver) != 16 or resolver[-1] != "RARE_OTHER":
+        raise ValueError(f"models.json {mode} resolver labels are invalid")
+
+    return model
 
 
 def _theta(payload, family, context, qubits):
@@ -106,15 +122,19 @@ def _validate_simulator(backend):
         raise RuntimeError("Physical hardware is disabled for this demo. Select a simulator.")
 
 
-def _run_one(backend, theta, qubits, labels, shots, cache_family, context):
+def _run_one(backend, theta, qubits, labels, shots, cache_family, context, mode):
     cache = _CACHE[cache_family]
-    cache_key = (context, shots, _backend_name(backend), type(backend).__module__, type(backend).__name__)
+    cache_key = (
+        mode, context, shots, _backend_name(backend),
+        type(backend).__module__, type(backend).__name__,
+    )
     if cache_key in cache:
         return cache[cache_key], False
 
-    circuit = _build(theta, qubits, f"pop909_{cache_family}_{context.replace('°','dim')}")
+    safe_context = context.replace("°", "dim")
+    circuit = _build(theta, qubits, f"pop909_{mode}_{cache_family}_{safe_context}")
     compiled = transpile(circuit, backend, optimization_level=0)
-    job = backend.run(compiled, shots=shots)  # one circuit per submission
+    job = backend.run(compiled, shots=shots)
     result = job.result()
     counts = result.get_counts()
 
@@ -127,6 +147,7 @@ def _run_one(backend, theta, qubits, labels, shots, cache_family, context):
         if value < 0:
             raise RuntimeError("Backend returned a negative count")
         histogram[int(bits, 2)] += value
+
     if sum(histogram) != shots:
         raise RuntimeError(f"Expected {shots} shots, received {sum(histogram)}")
 
@@ -137,17 +158,19 @@ def _run_one(backend, theta, qubits, labels, shots, cache_family, context):
         "backend_class": f"{type(backend).__module__}.{type(backend).__name__}",
         "job_id": str(job.job_id()) if callable(getattr(job, "job_id", None)) else None,
         "qubits": qubits, "depth": len(theta) // qubits, "parameters": len(theta),
+        "mode": mode,
     }
     cache[cache_key] = record
     return record, True
 
 
-def _filtered_probs(probs, colour):
+def _filtered_probs(probs, colour, coarse_labels):
     p = np.asarray(probs, dtype=float).copy()
+    other_index = coarse_labels.index("OTHER")
     if colour == "diatonic":
-        p[COARSE.index("OTHER")] = 0.0
+        p[other_index] = 0.0
     elif colour == "chromatic":
-        p[COARSE.index("OTHER")] *= 2.5
+        p[other_index] *= 2.5
     elif colour != "original":
         raise ValueError("colour must be diatonic, original, or chromatic")
     total = p.sum()
@@ -156,13 +179,13 @@ def _filtered_probs(probs, colour):
     return p / total
 
 
-def _rare_choice(payload, rng):
+def _rare_choice(payload, rng, tonic_label):
     labels = payload.get("rare_labels", [])
     weights = np.asarray(payload.get("rare_weights", []), dtype=float)
     if labels and len(labels) == len(weights) and weights.sum() > 0:
         weights /= weights.sum()
         return str(rng.choice(labels, p=weights)), "classical POP909 rare-class frequency"
-    return "I", "tonic fallback; rare table unavailable"
+    return tonic_label, "tonic fallback; rare table unavailable"
 
 
 def _quality_name(q):
@@ -186,28 +209,36 @@ def _parse_degree_token(token):
     return ROMAN_DEGREE[numeral], shift
 
 
-def _root_name(key, degree_index, shift=0):
-    scale = MAJOR_SCALES[key]
-    base = scale[degree_index]
-    if shift == 0:
-        return base
-    pc = (NOTE_PC[base] + shift) % 12
+def _root_name(key, degree_index, shift=0, mode="major"):
+    if mode == "major":
+        scale = MAJOR_SCALES[key]
+        base = scale[degree_index]
+        if shift == 0:
+            return base
+        pc = (NOTE_PC[base] + shift) % 12
+    else:
+        pc = (NOTE_PC[key] + MINOR_INTERVALS[degree_index] + shift) % 12
+
     names = FLAT_NAMES if key in FLAT_KEYS or shift < 0 else SHARP_NAMES
     return names[pc]
 
 
-def _label_info(label, key):
-    if label in DIATONIC_DEGREE:
-        degree = DIATONIC_DEGREE[label]
-        quality = DIATONIC_QUALITY[label]
-        root = _root_name(key, degree)
+def _label_info(label, key, mode):
+    if mode == "major" and label in MAJOR_DIATONIC_DEGREE:
+        degree = MAJOR_DIATONIC_DEGREE[label]
+        quality = MAJOR_DIATONIC_QUALITY[label]
+        root = _root_name(key, degree, mode=mode)
+    elif mode == "minor" and label in MINOR_CORE_DEGREE:
+        degree = MINOR_CORE_DEGREE[label]
+        quality = MINOR_CORE_QUALITY[label]
+        root = _root_name(key, degree, mode=mode)
     else:
         if ":" not in label:
             raise ValueError(f"Unsupported chord label {label!r}")
         token, q = label.split(":", 1)
         degree, shift = _parse_degree_token(token)
         quality = _quality_name(q)
-        root = _root_name(key, degree, shift)
+        root = _root_name(key, degree, shift, mode)
 
     symbol = root + QUALITY_SUFFIX[quality]
     root_pc = NOTE_PC[root]
@@ -215,50 +246,68 @@ def _label_info(label, key):
     if root_midi > 71:
         root_midi -= 12
     midi = [root_midi + interval for interval in QUALITY_INTERVALS[quality]]
+
     return {
         "label": label, "symbol": symbol, "root": root, "root_pc": root_pc,
         "quality": quality, "midi": midi, "bass_midi": 36 + root_pc,
     }
 
 
-def generate_progression(backend, key="C", bars=16, colour="original", shots=1024, seed=None):
+def generate_progression(backend, key="C", bars=16, colour="original", shots=1024, seed=None, mode="major"):
+    mode = str(mode).lower()
+    if mode not in ("major", "minor"):
+        raise ValueError("mode must be major or minor")
     if key not in MAJOR_SCALES:
-        raise ValueError("Select one of the supported major keys")
+        raise ValueError("Select one of the supported keys")
     if bars not in (8, 16, 32):
         raise ValueError("bars must be 8, 16, or 32")
     if type(shots) is not int or not 16 <= shots <= 4096:
         raise ValueError("shots must be an integer from 16 to 4096")
 
     _validate_simulator(backend)
-    payload = _load_payload()
+    payload = _load_payload(mode)
+    coarse_labels = payload["coarse_contexts"]
+    resolver_labels = payload["resolver_labels"]
+    tonic = "I" if mode == "major" else "i"
+
     seed = secrets.randbits(63) if seed is None else int(seed)
     rng = np.random.default_rng(seed)
-    current = "I"
-    coarse_sequence = ["I"]
-    resolved_sequence = ["I"]
+    current = tonic
+    coarse_sequence = [tonic]
+    resolved_sequence = [tonic]
     steps = []
     new_jobs = 0
     cache_hits = 0
 
     for step_index in range(1, bars):
         coarse_theta = _theta(payload, "coarse_theta", current, 3)
-        coarse_record, was_new = _run_one(backend, coarse_theta, 3, COARSE, shots, "coarse", current)
-        new_jobs += int(was_new); cache_hits += int(not was_new)
-        effective = _filtered_probs(coarse_record["probabilities"], colour)
-        coarse_idx = int(rng.choice(len(COARSE), p=effective))
-        nxt = COARSE[coarse_idx]
+        coarse_record, was_new = _run_one(
+            backend, coarse_theta, 3, coarse_labels, shots,
+            "coarse", current, mode,
+        )
+        new_jobs += int(was_new)
+        cache_hits += int(not was_new)
+
+        effective = _filtered_probs(coarse_record["probabilities"], colour, coarse_labels)
+        coarse_idx = int(rng.choice(len(coarse_labels), p=effective))
+        nxt = coarse_labels[coarse_idx]
+
         resolver_record = None
         resolver_idx = None
         fallback = None
 
         if nxt == "OTHER":
             resolver_theta = _theta(payload, "resolver_theta", current, 4)
-            resolver_record, was_new = _run_one(backend, resolver_theta, 4, RESOLVER, shots, "resolver", current)
-            new_jobs += int(was_new); cache_hits += int(not was_new)
-            resolver_idx = int(rng.choice(len(RESOLVER), p=resolver_record["probabilities"]))
-            concrete = RESOLVER[resolver_idx]
+            resolver_record, was_new = _run_one(
+                backend, resolver_theta, 4, resolver_labels, shots,
+                "resolver", current, mode,
+            )
+            new_jobs += int(was_new)
+            cache_hits += int(not was_new)
+            resolver_idx = int(rng.choice(len(resolver_labels), p=resolver_record["probabilities"]))
+            concrete = resolver_labels[resolver_idx]
             if concrete == "RARE_OTHER":
-                concrete, fallback = _rare_choice(payload, rng)
+                concrete, fallback = _rare_choice(payload, rng, tonic)
         else:
             concrete = nxt
 
@@ -279,10 +328,12 @@ def generate_progression(backend, key="C", bars=16, colour="original", shots=102
         resolved_sequence.append(concrete)
         current = nxt
 
-    chord_info = [_label_info(label, key) for label in resolved_sequence]
+    chord_info = [_label_info(label, key, mode) for label in resolved_sequence]
+
     return json.dumps({
-        "schema_version": 2,
-        "key": f"{key} major",
+        "schema_version": 3,
+        "mode": mode,
+        "key": f"{key} {mode}",
         "bars": bars,
         "seed": seed,
         "shots": shots,
@@ -299,17 +350,22 @@ def generate_progression(backend, key="C", bars=16, colour="original", shots=102
             "submission_policy": "one circuit per backend.run call",
         },
         "model": {
-            "coarse": "3-qubit POP909 PQC",
-            "resolver": "4-qubit POP909 OTHER resolver",
-            "training_scope": "POP909 major-key sections",
+            "coarse": f"3-qubit POP909 {mode} PQC",
+            "resolver": f"4-qubit POP909 {mode} OTHER resolver",
+            "training_scope": f"POP909 {mode}-key sections",
         },
         "controls": {
-            "harmonic_colour_note": "Diatonic/Chromatic are classical post-filters applied after quantum measurement; Original uses the measured coarse distribution unchanged.",
+            "harmonic_colour_note": (
+                "In-key removes OTHER after quantum measurement; "
+                "Adventurous boosts OTHER classically; "
+                "Authentic uses the measured coarse distribution unchanged."
+            ),
             "playback_note": "Browser audio rendering is classical and does not request quantum shots.",
         },
     }, ensure_ascii=False, allow_nan=False)
 
 
 def clear_cache():
-    _CACHE["coarse"].clear(); _CACHE["resolver"].clear()
+    _CACHE["coarse"].clear()
+    _CACHE["resolver"].clear()
     return json.dumps({"status": "cleared"})

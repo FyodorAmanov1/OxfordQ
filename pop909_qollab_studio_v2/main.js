@@ -27,7 +27,7 @@ function renderInspector(){
   const step=result.steps[selectedStep-1];const title=document.createElement('div');title.className='inspector-title';
   title.innerHTML=`<div><span class="tag">TRANSITION ${selectedStep}</span><h3>${step.previous_coarse} → ${step.resolved_label}</h3></div><div class="inspector-outcome">${result.chords[selectedStep].symbol}</div>`;panel.append(title);
   const note=document.createElement('p');note.className='small';note.textContent=result.controls.harmonic_colour_note;panel.append(note);
-  const h=document.createElement('h4');h.textContent=`3-qubit coarse PQC · sampled ${step.sampled_coarse}`;panel.append(h);
+  const h=document.createElement('h4');h.textContent=`3-qubit ${result.mode} coarse PQC · sampled ${step.sampled_coarse}`;panel.append(h);
   panel.append(probabilityRows(step.coarse.labels,step.coarse.probabilities,step.effective_coarse_probabilities,step.sampled_coarse_index));
   if(step.resolver){const a=document.createElement('div');a.className='resolver-arrow';a.textContent='OTHER ↓ 4-qubit chromatic resolver';panel.append(a);panel.append(probabilityRows(step.resolver.labels,step.resolver.probabilities,step.resolver.probabilities,step.sampled_resolver_index));}
   if(step.fallback){const f=document.createElement('p');f.className='warning';f.textContent=`Rare-class fallback: ${step.fallback}`;panel.append(f);}
@@ -39,10 +39,11 @@ function renderResult(){
 }
 async function generate(useRandomSeed=false){
   const seedField=$('seed');if(useRandomSeed||!seedField.value.trim())seedField.value=String(randomSeed());
-  const key=$('key').value,bars=Number($('bars').value),colour=$('colour').value,shots=Number($('shots').value),seed=Number(seedField.value);
+  const mode=$('mode').value,key=$('key').value,bars=Number($('bars').value),colour=$('colour').value,shots=Number($('shots').value),seed=Number(seedField.value);
   if(!Number.isInteger(shots)||shots<16||shots>4096){$('status').textContent='Shots must be an integer from 16 to 4096.';return;}
   stopPlayback();for(const id of ['generate','variation'])$(id).disabled=true;$('status').textContent='Generating harmony · measured quantum distributions are cached by context…';
-  try{const proxy=await inference.generate_progression.callPromising(backend,key,bars,colour,shots,seed);result=parsePythonJSON(proxy);renderResult();$('status').textContent=`Ready · ${result.execution.new_quantum_jobs} new quantum job(s), ${result.execution.cache_hits} cache hit(s).`;for(const id of ['play','stop','variation','export'])$(id).disabled=false;}
+  try{const proxy=await inference.generate_progression.callPromising(backend,key,bars,colour,shots,seed,mode);result=parsePythonJSON(proxy);renderResult();
+    $("midi").disabled = false;$('status').textContent=`Ready · ${result.execution.new_quantum_jobs} new quantum job(s), ${result.execution.cache_hits} cache hit(s).`;for(const id of ['play','stop','variation','export'])$(id).disabled=false;}
   catch(error){$('status').textContent=`Generation failed: ${error.message}. No backend fallback was used.`;}
   finally{$('generate').disabled=false;if(result)$('variation').disabled=false;}
 }
@@ -54,17 +55,142 @@ function voiceEnvelope(ctx,master,midi,start,duration,sound,gainScale=1){
   else{osc.type='triangle';gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(.07*gainScale,start+.008);gain.gain.exponentialRampToValueAtTime(.012*gainScale,start+Math.max(.04,duration*.72));gain.gain.linearRampToValueAtTime(0,start+duration);}
   osc.frequency.value=noteFrequency(midi);osc.connect(gain);gain.connect(master);osc.start(start);osc.stop(start+duration+.02);return{osc,gain};
 }
-function scheduleChord(ctx,master,chord,at,beat,pattern,sound){
-  const nodes=[],notes=chord.midi,add=(midi,start,duration,scale=1)=>nodes.push(voiceEnvelope(ctx,master,midi,start,duration,sound,scale));add(chord.bass_midi,at,Math.max(.25,3.6*beat),.9);
-  if(pattern==='arpeggio'){[0,1,2,1,0,1,2,1].forEach((idx,n)=>add(notes[idx%notes.length],at+n*.5*beat,.42*beat,1));}
-  else if(pattern==='pulse'){for(let b=0;b<4;b++)notes.forEach(midi=>add(midi,at+b*beat,.72*beat,.72));}
-  else notes.forEach(midi=>add(midi,at,3.65*beat,1));return nodes;
+function scheduleHarmonyInstrument(ctx,master,chord,at,beat,pattern,sound){
+  const nodes=[],notes=chord.midi;
+  const add=(midi,start,duration,scale=1)=>
+    nodes.push(voiceEnvelope(ctx,master,midi,start,duration,sound,scale));
+
+  if(pattern==='arpeggio'){
+    const order=[0,1,2,1,0,1,2,1];
+    order.forEach((idx,n)=>
+      add(notes[idx%notes.length],at+n*.5*beat,.42*beat,1)
+    );
+  }else if(pattern==='pulse'){
+    for(let b=0;b<4;b++){
+      notes.forEach(midi=>add(midi,at+b*beat,.72*beat,.72));
+    }
+  }else{
+    notes.forEach(midi=>add(midi,at,3.65*beat,1));
+  }
+  return nodes;
 }
 async function play(){
-  if(!result)return;stopPlayback();const generation=++playGeneration;audio=new AudioContext();await audio.resume();const bpm=Number($('tempo').value),beat=60/bpm,sound=$('sound').value,pattern=$('pattern').value,master=audio.createGain();master.gain.value=.75;master.connect(audio.destination);const start=audio.currentTime+.08;
-  result.chords.forEach((chord,i)=>scheduleChord(audio,master,chord,start+i*4*beat,beat,pattern,sound));$('playback-status').textContent=`Playing ${result.chords.length} generated chords · ${bpm} BPM · ${sound} · ${pattern}`;
-  const timer=()=>{if(generation!==playGeneration||!audio)return;const bar=Math.floor((audio.currentTime-start)/(4*beat));if(bar>=0&&bar<result.chords.length&&bar!==selectedStep){selectedStep=bar;renderTimeline();renderInspector();}if(bar>=result.chords.length){stopPlayback();return;}requestAnimationFrame(timer);};requestAnimationFrame(timer);
+  if(!result)return;
+  stopPlayback();
+
+  const instruments={
+    piano:$('inst-piano').checked,
+    strings:$('inst-strings').checked,
+    synth:$('inst-synth').checked,
+    bass:$('inst-bass').checked
+  };
+
+  if(!Object.values(instruments).some(Boolean)){
+    $('playback-status').textContent='Select at least one instrument.';
+    return;
+  }
+
+  const generation=++playGeneration;
+  audio=new AudioContext();
+  await audio.resume();
+
+  const bpm=Number($('tempo').value);
+  const beat=60/bpm;
+  const pattern=$('pattern').value;
+  const master=audio.createGain();
+  master.gain.value=.75;
+  master.connect(audio.destination);
+  const start=audio.currentTime+.08;
+
+  let scheduled=0;
+
+  result.chords.forEach((chord,i)=>{
+    const at=start+i*4*beat;
+
+    if(instruments.piano){
+      scheduled+=scheduleHarmonyInstrument(audio,master,chord,at,beat,pattern,'piano').length;
+    }
+    if(instruments.strings){
+      scheduled+=scheduleHarmonyInstrument(audio,master,chord,at,beat,pattern,'strings').length;
+    }
+    if(instruments.synth){
+      scheduled+=scheduleHarmonyInstrument(audio,master,chord,at,beat,pattern,'synth').length;
+    }
+    if(instruments.bass){
+      voiceEnvelope(audio,master,chord.bass_midi,at,Math.max(.25,3.6*beat),'piano',.8);
+      scheduled+=1;
+    }
+  });
+
+  const activeNames=Object.entries(instruments)
+    .filter(([,enabled])=>enabled)
+    .map(([name])=>name)
+    .join(' + ');
+
+  $('playback-status').textContent=
+    `Playing ${result.chords.length} generated chords · ${bpm} BPM · ${activeNames} · ${pattern} · ${scheduled} voices`;
+
+  const timer=()=>{
+    if(generation!==playGeneration||!audio)return;
+    const bar=Math.floor((audio.currentTime-start)/(4*beat));
+
+    if(bar>=0&&bar<result.chords.length&&bar!==selectedStep){
+      selectedStep=bar;
+      renderTimeline();
+      renderInspector();
+    }
+
+    if(bar>=result.chords.length){
+      stopPlayback();
+      return;
+    }
+
+    requestAnimationFrame(timer);
+  };
+
+  requestAnimationFrame(timer);
 }
 function stopPlayback(){playGeneration++;if(audio){try{audio.close();}catch{}audio=null;}$('playback-status').textContent='Stopped';}
-function exportJSON(){if(!result)return;const payload=JSON.stringify({...result,playback:{tempo_bpm:Number($('tempo').value),sound:$('sound').value,pattern:$('pattern').value,quantum_shots_unchanged:true}},null,2);$('export-panel').hidden=false;$('export-payload').value=payload;console.log(JSON.stringify({event:'quantum-harmony-export',encoding:'utf-8',payload}));}
-$('generate').onclick=()=>generate(false);$('variation').onclick=()=>generate(true);$('play').onclick=play;$('stop').onclick=stopPlayback;$('export').onclick=exportJSON;$('tempo').oninput=()=>$('tempo-value').textContent=`${$('tempo').value} BPM`;window.addEventListener('pagehide',stopPlayback);renderInspector();
+function exportJSON(){
+  if(!result)return;
+  const payload=JSON.stringify({
+    ...result,
+    playback:{
+      tempo_bpm:Number($('tempo').value),
+      instruments:{
+        piano:$('inst-piano').checked,
+        strings:$('inst-strings').checked,
+        synth:$('inst-synth').checked,
+        bass:$('inst-bass').checked
+      },
+      pattern:$('pattern').value,
+      quantum_shots_unchanged:true
+    }
+  },null,2);
+
+  $('export-panel').hidden=false;
+  $('export-payload').value=payload;
+  console.log(JSON.stringify({
+    event:'quantum-harmony-export',
+    encoding:'utf-8',
+    payload
+  }));
+}
+$('generate').onclick=()=>generate(false);$('variation').onclick=()=>generate(true);$('play').onclick=play;$('stop').onclick=stopPlayback;$("midi").onclick = exportMIDI;
+$('export').onclick=exportJSON;$('tempo').oninput=()=>$('tempo-value').textContent=`${$('tempo').value} BPM`;window.addEventListener('pagehide',stopPlayback);renderInspector();
+
+
+function syncTempoLabel() {
+  const tempo = document.getElementById("tempo");
+  const label = document.getElementById("tempo-value");
+  if (tempo && label) {
+    label.textContent = `${tempo.value} BPM`;
+  }
+}
+
+const tempoSlider = document.getElementById("tempo");
+if (tempoSlider) {
+  tempoSlider.addEventListener("input", syncTempoLabel);
+  tempoSlider.addEventListener("change", syncTempoLabel);
+  syncTempoLabel();
+}
