@@ -21,6 +21,44 @@ includes the fixed-grid reference, local composition, MIDI, score JSON, plan JSO
 immutable source bank, diagnostics and file hashes. WAV comparisons use matched
 audible-sample RMS and shared peak headroom; this is not perceptual LUFS matching.
 
+### Instrument volume and note envelopes
+
+Playback now shapes each note independently, including simultaneous notes. A piano
+or drum strike rises quickly and decays; bowed strings have a quick bow attack and
+shaped sustain; flute has a slower breath attack and release. Other winds/brass and
+low strings have their own defaults. Short notes shorten the attack/release to fit.
+The sustained envelopes include a gentle swell and easing before the release.
+These are editable articulation defaults rather than a claim that an instrument
+always has one fixed envelope.
+
+Score JSON stores an InstrumentPerformance per part: volume, attack/decay/release
+seconds, sustain level, swell, tremolo depth and struck/sustained mode. Set balance
+with repeated --part-volume arguments, for example:
+
+~~~powershell
+qml-compose --style mozart --part-volume flute=0.9 --part-volume cello=0.5 --out output-balanced
+~~~
+
+The WAV renderer uses the FluidSynth shared library and SoundFont timbres. It renders
+each note separately, replaces the sample's volume envelope with the explicit
+instrument envelope, applies velocity-sensitive sample synthesis, per-part volume,
+smoothly interpolated CC11 expression and panning, then mixes the notes. Overlapping
+notes therefore keep separate attacks/releases. Rendering is dry, without artificial
+reverb/chorus. A missing shared library is an explicit audio failure; MIDI and scores
+remain available. The Windows bundle installed by setup_audio.py includes that library.
+See the official [voice API](https://www.fluidsynth.org/api/group__voices.html) and
+[audio rendering API](https://www.fluidsynth.org/api/group__audio__rendering.html).
+
+Comparison WAVs still have matched overall RMS. Per-part volume sets ensemble
+balance; the listening page's volume slider sets overall listening level after
+normalization. MIDI exports record track volume with CC7 and preserve the envelope
+parameters as text metadata. Ordinary MIDI players choose their own instrument
+envelopes; reproducing the exact WAV shape requires this renderer.
+
+The Duet and POP909 browser previews also have explicit volume controls and note
+envelopes. They use oscillator approximations rather than SoundFont samples. These
+controls affect playback preferences and add no quantum shots or source-note edits.
+
 | Study | Inspiration | Default bars | Main contrast |
 |---|---|---:|---|
 | piece1 | Bach | 24 | Delayed instrumental imitation and sustained support |

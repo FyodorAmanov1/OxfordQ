@@ -1,5 +1,6 @@
 """Expressive MIDI conductor export and a strict event reader for round trips."""
 from collections import defaultdict, deque
+import json
 from pathlib import Path
 import mido
 from orchestrator.midi_io import export_midi
@@ -26,6 +27,14 @@ def export_composed_midi(score, path):
         conductor.append(message.copy(time=tick - cursor))
         cursor = tick
     midi.tracks[0] = conductor
+    for part, track in zip(score.parts, midi.tracks[1:]):
+        spec = score.performance.get(part.id)
+        if spec is not None:
+            for message in track:
+                if message.type == "control_change" and message.control == 7:
+                    message.value = round(spec.volume * 127)
+                    break
+            track.insert(1, mido.MetaMessage("text", text="instrument-envelope:" + json.dumps(spec.model_dump(), separators=(",", ":"))))
     midi.save(Path(path))
 
 

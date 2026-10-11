@@ -5,6 +5,7 @@ from bisect import bisect_right
 
 from orchestrator.instruments import profile
 from orchestrator.models import NoteEvent, Part
+from orchestrator.performance import performance_for
 from .models import ComposedScore
 
 
@@ -61,6 +62,8 @@ def validate_score(score, bank, request):
         raise ValueError("Score source/lead identity mismatch")
     if [p.id for p in score.parts] != request.instruments:
         raise ValueError("Score instrument identity/order mismatch")
+    if any(part not in request.instruments for part in score.performance):
+        raise ValueError("Unknown instrument in performance envelope")
     sources = {event.id: event for event in bank.events}
     ids = [n.id for part in score.parts for n in part.notes]
     if len(ids) != len(set(ids)):
@@ -220,6 +223,9 @@ def compile_plan(plan, bank, request, *, planner="local"):
                             + (bar % 4) * 3) for bar, start in enumerate(plan.timeline.bar_starts)]
     score = ComposedScore(title=request.style + " study", parts=list(parts.values()),
         lead_track=request.lead_track, timeline=plan.timeline,
-        source_bank_sha256=bank.digest, planner=planner, occurrences=lineage)
+        source_bank_sha256=bank.digest, planner=planner, occurrences=lineage,
+        performance={p.id: performance_for(p.instrument) for p in parts.values()})
+    for instrument, volume in request.part_volumes.items():
+        score.performance[instrument].volume = volume
     validate_score(score, bank, request)
     return score

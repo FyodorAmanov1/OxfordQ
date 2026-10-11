@@ -198,7 +198,8 @@ def orchestrate(parts: list[PartSpec] | list[dict], lead_track: str,
             path.write_text(music.model_dump_json(indent=2), encoding="utf-8")
             result.artifacts[name + "_json"] = str(path)
         if config.render_audio:
-            audio_artifacts, audio_report = render_comparisons(midis, config)
+            audio_artifacts, audio_report = render_comparisons(midis, config,
+                scores={"original": original, "baseline": baseline, "arrangement": score})
             result.artifacts.update(audio_artifacts)
             result.report["audio"] = audio_report
             if audio_report["status"] != "rendered":

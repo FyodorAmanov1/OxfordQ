@@ -47,7 +47,7 @@ def _write_pcm(path: Path, data: np.ndarray, format_: tuple) -> None:
         audio.writeframes(pcm.tobytes())
 
 
-def render_comparisons(midis: dict[str, Path], config: OrchestrationConfig) -> tuple[dict[str, str], dict]:
+def render_comparisons(midis: dict[str, Path], config: OrchestrationConfig, *, scores=None) -> tuple[dict[str, str], dict]:
     executable, font = discover_audio(config)
     if not executable or font is None or not font.is_file():
         return {}, {"status": "unavailable", "message": "Install FluidSynth and provide a .sf2 SoundFont. See scripts/setup_audio.py, --fluidsynth and --soundfont."}
@@ -59,6 +59,14 @@ def render_comparisons(midis: dict[str, Path], config: OrchestrationConfig) -> t
     try:
         for name, midi in midis.items():
             destination = midi.with_suffix(".wav")
+            if scores is not None:
+                from .articulated_audio import render_score
+                data, details = render_score(scores[name], executable, font.resolve(), config.sample_rate)
+                format_ = (2, 2, config.sample_rate)
+                _write_pcm(destination, data, format_)
+                rendered[name] = (destination, data, format_)
+                diagnostics.setdefault("performance", {})[name] = details
+                continue
             command = [executable, "-ni", "-q", "-T", "wav", "-O", "s16", "-r", str(config.sample_rate),
                        "-g", "0.25", "-o", "synth.polyphony=512",
                        "-F", str(destination), str(font.resolve()), str(midi.resolve())]

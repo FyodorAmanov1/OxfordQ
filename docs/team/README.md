@@ -2,6 +2,7 @@
 
 Current local integration: [plan completion, 2026-10-11](results/local-plan-completion-20261011.md).
 Expressive composition: [implementation and verification](results/expressive-composition-20261011.md).
+Instrument sound: [volume and note envelopes](results/instrument-envelopes-20261011.md).
 The handoff instructions below describe the historical import workflow.
 
 Import branch: codex/import-quantum-duet; default target: main.

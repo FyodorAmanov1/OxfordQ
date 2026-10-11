@@ -18,6 +18,7 @@ class InstrumentProfile:
 
 
 PROFILES = {
+    "piano": InstrumentProfile(21, 108, 0, "keyboard", 10, 64),
     "piccolo": InstrumentProfile(74, 108, 72, "woodwind", 1, 60),
     "flute": InstrumentProfile(60, 96, 73, "woodwind", 2, 56),
     "oboe": InstrumentProfile(58, 91, 68, "woodwind", 2, 68),
