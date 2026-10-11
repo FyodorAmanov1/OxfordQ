@@ -98,6 +98,14 @@ This project demonstrates a quantum-first generative harmony layer and transpare
 
 The quantum component generates harmony; audio rendering and the rest of the browser experience are classical.
 
+## Dataset and Citation
+
+This project derives its training statistics from the **POP909 Dataset for Music Arrangement Generation**. The dataset repository is released under the MIT License and asks users to cite the associated ISMIR 2020 paper:
+
+> Ziyu Wang, Ke Chen, Junyan Jiang, Yiyi Zhang, Maoran Xu, Shuqi Dai, Guxian Bin, and Gus Xia. **“POP909: A Pop-song Dataset for Music Arrangement Generation.”** Proceedings of the 21st International Conference on Music Information Retrieval (ISMIR), 2020.
+
+Only derived chord-transition statistics and trained model parameters are included in this Qollab project; the POP909 dataset itself is not redistributed here.
+
 ## Acknowledgements
 
 This effort is supported by Qollab & IonQ.
