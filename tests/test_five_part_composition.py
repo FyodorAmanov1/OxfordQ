@@ -50,6 +50,7 @@ def test_duration_registers_and_all_five_parts():
     assert (result["bars"], result["duration_beats"], result["duration_seconds"], result["tempo_bpm"]) == (16, 64, 32, 120)
     assert [t["instrument"] for t in result["tracks"]] == [s[0] for s in INSTRUMENTS]
     assert {t["channel"] for t in result["tracks"]} == set(range(5))
+    assert [t["program"] for t in result["tracks"]] == [73, 71, 40, 42, 0]
     assert all(e["onset_beats"]+e["duration_beats"] <= 64 for t in result["tracks"] for e in t["events"])
     assert all(s[2] <= e["pitch_midi"] <= s[3] for t, s in zip(result["tracks"], INSTRUMENTS)
                for e in t["events"] if not e["rest"])

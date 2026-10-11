@@ -23,7 +23,7 @@ SCALE = (0, 2, 4, 5, 7, 9, 11)
 INSTRUMENTS = (
     ("Flute", "flute", 60, 96, 77, 73),
     ("Clarinet", "clarinet", 50, 94, 68, 71),
-    ("Violin", "violin", 55, 100, 72, 48),
+    ("Violin", "violin", 55, 100, 72, 40),
     ("Cello", "cello", 36, 81, 48, 42),
     ("Piano", "piano", 21, 108, 60, 0),
 )
