@@ -9,11 +9,11 @@
     <details><summary>Load a supplied run-result envelope</summary>
       <label>Run-result JSON<textarea id="import-payload" rows="4" spellcheck="false"></textarea></label>
       <button id="import-result">Load JSON · no inference</button>
-      <p class="small">Paste an exported qm.run-result.v1 envelope. Optional arranged output is inspected separately; unsupported or failed output is reported explicitly.</p>
+      <p class="small">Paste an exported qm.run-result.v1 or qm.joint-cue-result.v1 result. Optional arranged output is inspected separately; unsupported or failed output is reported explicitly.</p>
     </details>
     <div class="controls">
-      <label>Inference batch<select id="batch"><option value="five-live">5 circuits · new QCBM melody</option><option value="four-recorded">4 circuits · recorded M3A melody</option></select></label>
-      <label>Shots per circuit<input id="shots" type="number" min="16" max="4096" step="1" value="1024"></label>
+      <label>Experiment execution<select id="batch"><option value="joint-cue-recorded">1 circuit · joint cues + RECORDED melody · IonQ compatible</option><option value="five-live">Legacy · 5 circuits · new melody · built-in only</option><option value="four-recorded">Legacy · 4 circuits · recorded melody · built-in only</option></select></label>
+      <label>Shots per circuit<input id="shots" type="number" min="16" max="4096" step="1" value="32"></label>
       <label>Selected simulator type<select id="execution-type"><option value="selected-simulator-unverified">Type not confirmed</option><option value="ideal-simulator">Ideal simulator</option><option value="noisy-simulator">Noise-model simulator</option></select></label>
       <button id="generate" class="primary">Generate take · one job</button>
     </div>
@@ -63,8 +63,8 @@
     <p>A Bell state (|00⟩ + |11⟩)/√2 is freshly prepared. Four frozen, trained RY measurement angles select Alice's and Bob's local measurements. Each player's note uses only the pre-agreed score, timing and its own output. The referee checks a ⊕ b = x · y; it cannot correct, suppress or replace a voice's notes.</p>
     <p id="angles">Frozen angles load with the take.</p>
     <p>The local classical strategy shares randomness prepared independently of the cue sequence. Alice receives only x and her two-entry function; Bob receives only y and his. No communication of cues or outputs is allowed before producing notes.</p>
-    <p>A separate, previously trained 12-qubit / 84-parameter QCBM supplies four base motifs. Five-circuit mode samples it in this job. Four-circuit mode explicitly loads a recorded M3A draw. Both comparison methods use the identical melody, cues, sound design, levels and timing.</p>
-    <p>Ideal simulators, noisy simulators and recorded melodies are different sources. Simulator type is user-declared and exported with backend identity. Reconstructed playback is a random permutation of histogram counts, not a chronological measurement record. The 95% Hoeffding interval assumes independent shots and fixed equal allocation; it is never hardware-certified.</p>
+    <p>A separate, previously trained 12-qubit / 84-parameter QCBM supplies four base motifs. Five-circuit mode samples it in this job. Single-circuit joint-cue mode and four-circuit legacy mode explicitly load a RECORDED M3A draw. The single circuit measures yxba; its observed cue groups may have unequal shot counts. Both comparison methods use the identical melody, cues, sound design, levels and timing.</p>
+    <p>Ideal simulators, noisy simulators and recorded melodies are different sources. Simulator type is user-declared and exported with backend identity. Reconstructed playback is a random permutation of histogram counts, not a chronological measurement record. The legacy 95% Hoeffding interval assumes fixed equal allocation; joint-cue mode uses a weighted interval conditional on the observed allocations and reports unavailable if any group is empty. Both assume independent fresh preparations and a fixed channel; it is never hardware-certified.</p>
     <p>This is a centralized simulation of a noncommunicating task, not a physically separated Bell experiment. It is classically simulatable. The advantage is conditional on the communication restriction; better music and computational speedup are not established. Earlier classical models outperformed the QCBM on melody likelihood.</p>
   </details>
   <footer>MIT code · trained strategy, musical mapping, comparison & reproducible evaluation<br>This effort is supported by Qollab &amp; IonQ</footer>
