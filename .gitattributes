@@ -1,0 +1,6 @@
+# Frozen evidence is byte-sensitive: do not convert line endings on checkout.
+components/quantum_duet/tests/fixtures/qollab-local-run.json -text
+docs/team/fixtures/run-result.v1.json -text
+quantum_models/data/*.json -text
+quantum_models/qcbm_circuit.py -text
+pop909_qollab_studio_v2/data/models.json -text

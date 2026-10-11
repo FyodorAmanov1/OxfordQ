@@ -1,5 +1,8 @@
 # Team handoff
 
+Current local integration: [plan completion, 2026-10-11](results/local-plan-completion-20261011.md).
+The handoff instructions below describe the historical import workflow.
+
 Import branch: codex/import-quantum-duet; default target: main.
 Reviewed code: `e9f02aecfcd973dbe8e235d74265515b65aca348`; freshly inspected team base: `7b9b6b0f6a27425645c01389ccbcd7d63b4a3982`.
 All initial workers start from one HANDOFF_SHA: the final commit adding these three

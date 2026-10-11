@@ -4,7 +4,61 @@ Arrange independently generated instrument parts as tonal cinematic orchestral M
 Gemini proposes harmony, roles and bounded edits. Python protects the main melody,
 checks instrument limits, and records the source of every output note.
 
+See [orchestration theory and model boundaries](docs/orchestration.md).
+
 Licensed under the [MIT License](LICENSE).
+
+## Current local model pipeline
+
+The repository includes the frozen motif QCBM and POP909 harmony checkpoints.
+The QCBM is reused for each instrument with separate sampling seeds and classical
+decoders for register, scale, rhythm and articulation. This is a starting point for
+your smaller instrument models; the generation registry lets you replace one adapter
+at a time. No new models were trained and local runs use Qiskit simulation.
+
+~~~powershell
+python -m pip install -e ".[dev,quantum]"
+python -m pip install -e "components/quantum_duet[dev]"
+python -m quantum_models.orchestra --bars 16 --backend rules --no-audio --out output-model-orchestra
+~~~
+
+Remove --no-audio and supply --fluidsynth and --soundfont to render WAV comparisons.
+The default ensemble is flute, cello, violin, viola and clarinet. See
+[model integration](README_POP909_INTEGRATION.md) for instrument selection, minor-key
+inference and an optional Gemini run.
+
+Quantum Duet's local UI supports a separate creative arrangement using rules or
+Gemini. Its raw evidence, paired source IDs and quantum execution counts remain
+intact. Start it with:
+
+~~~powershell
+python components/quantum_duet/dev/server.py --port 8766 --arrangement-backend rules
+~~~
+
+Open http://127.0.0.1:8766. For Gemini, set GEMINI_API_KEY and select
+--arrangement-backend gemini. Missing or invalid Gemini responses leave raw playback
+available and record arrangement failure.
+
+### Local verification and release
+
+~~~powershell
+python -m pytest -q tests components/quantum_duet/tests
+node tests/duet_projection_checks.mjs
+node components/quantum_duet/tests/ui_checks.mjs
+python scripts/build_local_release.py --out dist/local-release
+python scripts/assess_music.py output-model-orchestra
+python scripts/evaluate_model_orchestra.py --out output-model-evaluation
+~~~
+
+The build command compiles Python and JavaScript, builds both Python wheels and
+the two upload ZIPs, checks dependency consistency, and exercises installed wheels
+and generated Duet source using local simulation. Choose a fresh output directory
+for each build. It does not upload or push anything.
+Activate your environment before the Node projection check, or pass its Python
+executable as the second argument.
+
+See [the completion report](docs/team/results/local-plan-completion-20261011.md)
+for verified scope and remaining live API/listening work.
 
 Instrument sequence generation is pluggable: each instrument can use a distinct smaller
 classical or QML model. This version uses an existing Gemini model through inference for

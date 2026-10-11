@@ -25,7 +25,8 @@ def arrange_baseline(original: Score, plan: ArrangementPlan, config: Orchestrati
             phrases = defaultdict(list)
             for n in part.notes:
                 phrases[n.phrase_id].append(n)
-            for notes in phrases.values():
+            previous_pitch = None
+            for notes in sorted(phrases.values(), key=lambda ns: min(n.onset_tick for n in ns)):
                 active = [n for n in notes if not n.muted]
                 if not active:
                     continue
@@ -36,6 +37,12 @@ def arrange_baseline(original: Score, plan: ArrangementPlan, config: Orchestrati
                     for n in notes:
                         n.muted = True
                     continue
+                first = min(active, key=lambda n: n.onset_tick)
+                if previous_pitch is not None:
+                    continuous = [shift for shift in offsets
+                                  if abs(first.pitch + shift - previous_pitch) <= 12]
+                    if continuous:
+                        offsets = continuous
                 def placement(shift):
                     consonance = sum(n.duration_ticks for n in active if (n.pitch + shift) % 12 in pcs_at(plan, n.onset_tick))
                     return consonance - abs(shift) * result.ppq * 0.015
@@ -57,6 +64,7 @@ def arrange_baseline(original: Score, plan: ArrangementPlan, config: Orchestrati
                         repairs.append((n.duration_ticks, n, chosen))
                 for _, n, pitch in sorted(repairs, key=lambda item: item[0], reverse=True)[:budget]:
                     n.pitch = pitch
+                previous_pitch = max(active, key=lambda n: n.onset_tick).pitch
         # Resolve section capacity by muting quiet overlaps, never by dropping IDs.
         if part.id != result.lead_track:
             accepted = []

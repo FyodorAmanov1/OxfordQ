@@ -1,0 +1,12 @@
+{
+  "lead_track": "flute",
+  "models": {
+    "qcbm-flute": {"factory": "quantum_models:QCBMInstrumentGenerator", "kwargs": {"instrument": "flute"}},
+    "qcbm-cello": {"factory": "quantum_models:QCBMInstrumentGenerator", "kwargs": {"instrument": "cello"}}
+  },
+  "routes": {"flute": "qcbm-flute", "cello": "qcbm-cello"},
+  "jobs": [
+    {"id": "flute", "instrument": "flute", "seed": 42, "role": "melody"},
+    {"id": "cello", "instrument": "cello", "seed": 143, "role": "bass"}
+  ]
+}

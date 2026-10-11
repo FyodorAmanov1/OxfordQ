@@ -174,12 +174,12 @@ def validate_result(result: dict) -> None:
              "Contradictory arrangement label")
     if result["mode"] == "arranged":
         arranged = result["arranged"]
-        _require(arranged["backend_requested"] == "rules" and
+        _require(arranged["backend_requested"] in ("rules", "gemini") and
                  arranged["immutable_source_sha256"] == source["sha256"] and
                  arranged["immutable_source_canonical_json_sha256"] == source["canonical_json_sha256"],
                  "Arrangement changed raw identity")
         if result["status"] == "completed":
-            _require(arranged["backend_actual"] == "rules", "Unknown actual arrangement backend")
+            _require(arranged["backend_actual"] == arranged["backend_requested"], "Unknown actual arrangement backend")
             event_lookup = {e["event_id"]: e for e in result["events"][arranged["policy"]] if not e["rest"]}
             lines = {line["output_id"]: line for line in arranged["lineage"]}
             _require(len(lines) == len(event_lookup), "Incomplete output lineage")
@@ -359,15 +359,17 @@ def raw_score(completed_result: CompletedResult, *, policy: str = "quantum"):
 
 
 def arrange_result(completed_result: CompletedResult, *, policy: str = "quantum",
-                   key: str = "C major", chords: tuple[str, ...] = ("C", "F", "G", "C")) -> CompletedResult:
-    """Explicit optional rules arrangement. Failures retain usable frozen raw evidence."""
+                   key: str = "C major", chords: tuple[str, ...] = ("C", "F", "G", "C"),
+                   backend: str = "rules", model: str | None = None, provider=None) -> CompletedResult:
+    """Optional arrangement; Gemini must complete or raw replay remains available."""
     from orchestrator.models import OrchestrationConfig
     from orchestrator.pipeline import orchestrate
     raw = _raw(completed_result)
     manifest = to_manifest(completed_result, policy=policy)
     result = deepcopy(raw)
     result["mode"] = "arranged"
-    arranged = dict(backend_requested="rules", backend_actual=None, policy=policy,
+    _require(backend in ("rules", "gemini"), "Unknown arrangement backend")
+    arranged = dict(backend_requested=backend, backend_actual=None, policy=policy,
         raw_result_canonical_json_sha256=completed_result.canonical_sha256,
         immutable_source_sha256=raw["raw_source"]["sha256"],
         immutable_source_canonical_json_sha256=raw["raw_source"]["canonical_json_sha256"],
@@ -378,8 +380,11 @@ def arrange_result(completed_result: CompletedResult, *, policy: str = "quantum"
         _require(bool(manifest.parts[0].notes), "Silent lead")
         output = orchestrate([p.model_copy(deep=True) for p in manifest.parts], "alice",
             OrchestrationConfig(bars=4, window_bars=4, ppq=raw["ppq"], tempo_bpm=raw["tempo_bpm"],
-                                backend="rules", render_audio=False, key=key, chords=list(chords)))
-        arranged["backend_actual"] = "rules"
+                                backend=backend, render_audio=False, key=key, chords=list(chords),
+                                **({"model": model} if model else {})), provider=provider)
+        if backend == "gemini" and output.report["provider_status"] != "active":
+            raise ValueError("Gemini did not complete all stages; no fallback arrangement accepted")
+        arranged["backend_actual"] = backend
         arranged["output_parts"] = [p.model_dump(mode="json") for p in output.score.parts]
         arranged["report"] = output.report
         for part in output.score.parts:
@@ -387,15 +392,15 @@ def arrange_result(completed_result: CompletedResult, *, policy: str = "quantum"
             round_map = json.loads(spec.source["round_index_map"])
             event_map = json.loads(spec.source["source_event_map"])
             for note in part.notes:
-                transform_id = f"{raw['run_id']}/arranged/rules/{policy}/{note.id}"
+                transform_id = f"{raw['run_id']}/arranged/{backend}/{policy}/{note.id}"
                 arranged["transformation_ids"].append(transform_id)
                 arranged["lineage"].append(dict(output_id=note.id, source_id=note.source_id,
                     event_id=event_map[note.source_id], round_id=round_map[note.source_id.split(":n")[1]],
                     run_id=raw["run_id"], transformation_id=transform_id, muted=note.muted))
     except Exception as exc:
         # Provider errors and local paths may contain secrets. Export only a safe class/code.
-        code = "silent_lead" if not manifest.parts[0].notes else "rules_arrangement_failed"
-        error = dict(stage="arrangement", code=code, message=f"Rules arrangement failed ({type(exc).__name__})")
+        code = "silent_lead" if not manifest.parts[0].notes else f"{backend}_arrangement_failed"
+        error = dict(stage="arrangement", code=code, message=f"{backend} arrangement failed ({type(exc).__name__})")
         result["status"] = "failed"
         result["errors"].append(error)
         arranged["errors"].append(error)
@@ -407,7 +412,9 @@ def main(argv=None) -> int:
     parser.add_argument("--result", required=True, type=Path, help="Frozen qm.run-result.v1 JSON")
     parser.add_argument("--out", required=True, type=Path, help="New output directory")
     parser.add_argument("--policy", choices=POLICIES, default="quantum")
-    parser.add_argument("--arrange", action="store_true", help="Also produce a labelled rules arrangement")
+    parser.add_argument("--arrange", action="store_true", help="Also produce a labelled arrangement")
+    parser.add_argument("--backend", choices=("rules", "gemini"), default="rules")
+    parser.add_argument("--model")
     args = parser.parse_args(argv)
     completed = freeze_result(json.loads(args.result.read_bytes()))
     manifest = to_manifest(completed, policy=args.policy)
@@ -417,7 +424,7 @@ def main(argv=None) -> int:
     from orchestrator.midi_io import export_midi
     export_midi(raw_score(completed, policy=args.policy), args.out / "raw.mid")
     if args.arrange:
-        arranged = arrange_result(completed, policy=args.policy).to_dict()
+        arranged = arrange_result(completed, policy=args.policy, backend=args.backend, model=args.model).to_dict()
         (args.out / "arranged-result.json").write_bytes(canonical_json(arranged))
         if arranged["status"] == "failed":
             print(json.dumps(arranged["errors"]))

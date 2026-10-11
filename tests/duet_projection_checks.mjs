@@ -5,30 +5,38 @@ import {spawnSync} from 'node:child_process';
 import {playbackProjection,validateSource} from '../components/quantum_duet/web/playback-projection.mjs';
 import {readEnvelope,exportEnvelope,envelopeView,validateEnvelope} from '../components/quantum_duet/web/run-contract.mjs';
 import {midiBytes} from '../components/quantum_duet/web/ui.mjs';
-global.crypto=webcrypto;
-const py=process.argv[2]||'.venv-review/Scripts/python.exe';
+if (!globalThis.crypto) globalThis.crypto=webcrypto;
+const py=process.argv[2]||process.env.PYTHON||'python';
 const r=spawnSync(py,['-c',`
 import json
 from pathlib import Path
 from unittest.mock import patch
 from quantum_duet.browser_projection import arrange_browser,project,browser_bundle
 from quantum_duet.orchestration_adapter import arrange_result,freeze_result
+from orchestrator.models import ArrangementPlan,EditProposal
+class EchoProvider:
+    def request(self,schema,payload,feedback):
+        return ArrangementPlan.model_validate(payload['baseline_plan']) if schema is ArrangementPlan else EditProposal(edits=[])
 raw=Path('docs/team/fixtures/run-result.v1.json').read_bytes()
 source=Path('components/quantum_duet/tests/fixtures/qollab-local-run.json').read_bytes()
 with patch('qiskit.providers.basic_provider.BasicSimulator.run',side_effect=AssertionError('New job')):
     good=arrange_browser(raw,raw_source_bytes=source)
+    model=arrange_browser(raw,raw_source_bytes=source,backend='gemini',provider=EchoProvider())
     frozen=freeze_result(json.loads(raw),raw_bytes=source)
     classical=arrange_result(frozen,policy='classical').to_dict()
     with patch('orchestrator.pipeline.orchestrate',side_effect=RuntimeError('test failure')):
         failed=arrange_result(frozen,policy='quantum').to_dict()
     failure=browser_bundle(raw,project(raw,dict(quantum=failed,classical=classical)),raw_source_bytes=source)
-print(json.dumps(dict(good=good,failure=failure,failed_envelope=failed)))
+print(json.dumps(dict(good=good,model=model,failure=failure,failed_envelope=failed)))
 `],{encoding:'utf8',maxBuffer:2_000_000});
-assert.equal(r.status,0,r.stderr);
-const {good,failure,failed_envelope}=JSON.parse(r.stdout),raw=good.run_result, before=JSON.stringify(raw);
+assert.equal(r.status,0,r.error?.message||r.stderr);
+const {good,model,failure,failed_envelope}=JSON.parse(r.stdout),raw=good.run_result, before=JSON.stringify(raw);
 await validateSource(raw,good.raw_source_text);
 const projection=await playbackProjection(raw,good.raw_envelope_text,good.playback_projection);
 assert.equal(projection.available,true);
+const modelProjection=await playbackProjection(raw,model.raw_envelope_text,model.playback_projection);
+assert.equal(modelProjection.available,true);
+assert.equal(model.playback_projection.policies.quantum.actual_backend,'gemini');
 const f=await playbackProjection(raw,failure.raw_envelope_text,failure.playback_projection);
 assert.equal(f.available,false);assert.equal(f.events.quantum,null);assert.equal(f.events.classical.length,32);
 validateEnvelope(failed_envelope);assert.equal(envelopeView(failed_envelope).events.quantum.length,32);
