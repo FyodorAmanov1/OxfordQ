@@ -1,0 +1,452 @@
+{
+  "base_main": "c49c2e6cace0790211ae6808f4ecdc4cb77faa01",
+  "sample": {
+    "backend_jobs": 0,
+    "bit_order": "Displayed q11..q0; motif token i = (basis_index >> (3*i)) & 7",
+    "candidate_draws": 16,
+    "checkpoint_canonical_sha256": "b2489615374217adc6cae987f5917d8bddd6ca25b614c2c051f0c26957060a59",
+    "checkpoint_file": "components/quantum_duet/src/quantum_duet/data/melody_angles.json",
+    "checkpoint_file_sha256": "6b57c0bd921b9fac673353034e66cd07dec648bce044d2d2a890e0d35e15c024",
+    "circuit_source_sha256": "542c0a625515a888f43b06f388d10953048b4515eea3e107da1b901ac3b4bc6e",
+    "distribution_sha256": "56dced1787aa792d3c9a1d56796b283d7f6ee95293d81bfac68eed0e21c22953",
+    "execution": "OFFLINE exact local statevector; 16 independent categorical draws with replacement",
+    "motifs": [
+      {
+        "basis_index": 1681,
+        "bitstring": "011010010001",
+        "draw_index": 0,
+        "exact_probability": 0.003573770410531959,
+        "motif_id": "m00",
+        "tokens": [
+          1,
+          2,
+          2,
+          3
+        ]
+      },
+      {
+        "basis_index": 441,
+        "bitstring": "000110111001",
+        "draw_index": 1,
+        "exact_probability": 0.0001800586511846416,
+        "motif_id": "m01",
+        "tokens": [
+          1,
+          7,
+          6,
+          0
+        ]
+      },
+      {
+        "basis_index": 1259,
+        "bitstring": "010011101011",
+        "draw_index": 2,
+        "exact_probability": 0.0010883665481786877,
+        "motif_id": "m02",
+        "tokens": [
+          3,
+          5,
+          3,
+          2
+        ]
+      },
+      {
+        "basis_index": 2770,
+        "bitstring": "101011010010",
+        "draw_index": 3,
+        "exact_probability": 0.002396654549396993,
+        "motif_id": "m03",
+        "tokens": [
+          2,
+          2,
+          3,
+          5
+        ]
+      },
+      {
+        "basis_index": 1692,
+        "bitstring": "011010011100",
+        "draw_index": 4,
+        "exact_probability": 0.0022785442035220533,
+        "motif_id": "m04",
+        "tokens": [
+          4,
+          3,
+          2,
+          3
+        ]
+      },
+      {
+        "basis_index": 697,
+        "bitstring": "001010111001",
+        "draw_index": 5,
+        "exact_probability": 6.00801966928941e-05,
+        "motif_id": "m05",
+        "tokens": [
+          1,
+          7,
+          2,
+          1
+        ]
+      },
+      {
+        "basis_index": 3729,
+        "bitstring": "111010010001",
+        "draw_index": 6,
+        "exact_probability": 0.0004810183162175129,
+        "motif_id": "m06",
+        "tokens": [
+          1,
+          2,
+          2,
+          7
+        ]
+      },
+      {
+        "basis_index": 3026,
+        "bitstring": "101111010010",
+        "draw_index": 7,
+        "exact_probability": 0.0024515594955943753,
+        "motif_id": "m07",
+        "tokens": [
+          2,
+          2,
+          7,
+          5
+        ]
+      },
+      {
+        "basis_index": 2692,
+        "bitstring": "101010000100",
+        "draw_index": 8,
+        "exact_probability": 0.0005792271890179536,
+        "motif_id": "m08",
+        "tokens": [
+          4,
+          0,
+          2,
+          5
+        ]
+      },
+      {
+        "basis_index": 2633,
+        "bitstring": "101001001001",
+        "draw_index": 9,
+        "exact_probability": 0.006597847102213439,
+        "motif_id": "m09",
+        "tokens": [
+          1,
+          1,
+          1,
+          5
+        ]
+      },
+      {
+        "basis_index": 593,
+        "bitstring": "001001010001",
+        "draw_index": 10,
+        "exact_probability": 0.004184307930353636,
+        "motif_id": "m10",
+        "tokens": [
+          1,
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "basis_index": 2660,
+        "bitstring": "101001100100",
+        "draw_index": 11,
+        "exact_probability": 0.0004576954222268786,
+        "motif_id": "m11",
+        "tokens": [
+          4,
+          4,
+          1,
+          5
+        ]
+      },
+      {
+        "basis_index": 3512,
+        "bitstring": "110110111000",
+        "draw_index": 12,
+        "exact_probability": 0.00043933788574686457,
+        "motif_id": "m12",
+        "tokens": [
+          0,
+          7,
+          6,
+          6
+        ]
+      },
+      {
+        "basis_index": 2916,
+        "bitstring": "101101100100",
+        "draw_index": 13,
+        "exact_probability": 0.0019052574816717043,
+        "motif_id": "m13",
+        "tokens": [
+          4,
+          4,
+          5,
+          5
+        ]
+      },
+      {
+        "basis_index": 1683,
+        "bitstring": "011010010011",
+        "draw_index": 14,
+        "exact_probability": 0.0020343893711117006,
+        "motif_id": "m14",
+        "tokens": [
+          3,
+          2,
+          2,
+          3
+        ]
+      },
+      {
+        "basis_index": 2762,
+        "bitstring": "101011001010",
+        "draw_index": 15,
+        "exact_probability": 0.00045691414736220436,
+        "motif_id": "m15",
+        "tokens": [
+          2,
+          1,
+          3,
+          5
+        ]
+      }
+    ],
+    "numpy_version": "2.5.3",
+    "original_checkpoint_sha256": "ecd7faaa232a15c261a5e3daf8047e0b4d71be9f4eb4bb597e70acb671c5b8a4",
+    "parameters": 84,
+    "probability_mass_before_normalization": 0.9999999999999977,
+    "python_version": "3.12.14",
+    "qiskit_version": "2.5.2",
+    "qubits": 12,
+    "rejected_draws": 0,
+    "rng": "NumPy PCG64",
+    "schema": "oxfordq.qcbm-motif-sample.v1",
+    "seed": 20261011,
+    "selection": "All draws saved in original order; no quality filtering or resampling",
+    "token_mapping": "0 rest; 1..7 C4 D4 E4 F4 G4 A4 B4 before classical transformations",
+    "training_steps": 0
+  },
+  "comparison": [
+    {
+      "A_to_A_prime_and_double_prime_diatonic_interval_agreement": 0.5833333333333333,
+      "A_to_A_prime_and_double_prime_pitch_class_agreement": 0.71875,
+      "bars": 16.0,
+      "distinct_durations": 5,
+      "distinct_pitches": 11,
+      "events": 64,
+      "final_tonic": true,
+      "last_pitch": 72,
+      "leaps_over_octave": 0,
+      "mean_abs_semitone_interval": 2.459016393442623,
+      "name": "QCBM developed melody",
+      "notes_per_bar": 3.875,
+      "repeated_bar_pitch_class_fraction": 0.0625,
+      "rest_events": 2,
+      "seconds": 32.0,
+      "sounding_notes": 62,
+      "stepwise_fraction": 0.5409836065573771
+    },
+    {
+      "A_to_A_prime_and_double_prime_diatonic_interval_agreement": 0.16666666666666666,
+      "A_to_A_prime_and_double_prime_pitch_class_agreement": 0.34375,
+      "bars": 16.0,
+      "distinct_durations": 1,
+      "distinct_pitches": 7,
+      "events": 64,
+      "final_tonic": false,
+      "last_pitch": 67,
+      "leaps_over_octave": 0,
+      "mean_abs_semitone_interval": 3.1166666666666667,
+      "name": "Same 16 draws, straight quarter notes",
+      "notes_per_bar": 3.8125,
+      "repeated_bar_pitch_class_fraction": 0.0,
+      "rest_events": 3,
+      "seconds": 32.0,
+      "sounding_notes": 61,
+      "stepwise_fraction": 0.5666666666666667
+    },
+    {
+      "A_to_A_prime_and_double_prime_diatonic_interval_agreement": null,
+      "A_to_A_prime_and_double_prime_pitch_class_agreement": null,
+      "bars": 4.0,
+      "distinct_durations": 1,
+      "distinct_pitches": 6,
+      "events": 16,
+      "final_tonic": true,
+      "last_pitch": 84,
+      "leaps_over_octave": 0,
+      "mean_abs_semitone_interval": 5.142857142857143,
+      "name": "Original four-bar RECORDED Alice melody",
+      "notes_per_bar": 3.75,
+      "repeated_bar_pitch_class_fraction": 0.0,
+      "rest_events": 1,
+      "seconds": 8.0,
+      "sounding_notes": 15,
+      "stepwise_fraction": 0.35714285714285715
+    },
+    {
+      "A_to_A_prime_and_double_prime_diatonic_interval_agreement": 0.07142857142857142,
+      "A_to_A_prime_and_double_prime_pitch_class_agreement": 0.06666666666666667,
+      "bars": 16.0,
+      "distinct_durations": 7,
+      "distinct_pitches": 14,
+      "events": 47,
+      "final_tonic": true,
+      "last_pitch": 60,
+      "leaps_over_octave": 6,
+      "mean_abs_semitone_interval": 7.659090909090909,
+      "name": "8-qubit QNN free melody",
+      "notes_per_bar": 2.8125,
+      "repeated_bar_pitch_class_fraction": 0.0,
+      "rest_events": 2,
+      "seconds": 32.0,
+      "sounding_notes": 45,
+      "stepwise_fraction": 0.25
+    },
+    {
+      "A_to_A_prime_and_double_prime_diatonic_interval_agreement": 1.0,
+      "A_to_A_prime_and_double_prime_pitch_class_agreement": 0.0,
+      "bars": 16.0,
+      "distinct_durations": 7,
+      "distinct_pitches": 14,
+      "events": 45,
+      "final_tonic": false,
+      "last_pitch": 79,
+      "leaps_over_octave": 10,
+      "mean_abs_semitone_interval": 7.441860465116279,
+      "name": "8-qubit QNN structured melody",
+      "notes_per_bar": 2.75,
+      "repeated_bar_pitch_class_fraction": 0.0,
+      "rest_events": 1,
+      "seconds": 32.0,
+      "sounding_notes": 44,
+      "stepwise_fraction": 0.18604651162790697
+    }
+  ],
+  "verification": {
+    "verified_utc": "2026-10-11T14:18:04.439668+00:00",
+    "status": "passed",
+    "identical_regenerated_midi_wav": true,
+    "preserved_raw_sha256": "be635526814540453ae31e34266207e4c59dd61468c5118bb3b0159ea389a5bb",
+    "protected_recorded_statistics_unchanged": true,
+    "backend_jobs": 0,
+    "files": [
+      {
+        "file": "arranged.mid",
+        "seconds": 32,
+        "sha256": "72094b9f5bd7c15f395f507f3481ee5dc1c2fd5943fc5199c5834d5351686a2a",
+        "bytes": 1427,
+        "wav_rms": null
+      },
+      {
+        "file": "arranged.wav",
+        "seconds": 32,
+        "sha256": "e5413d76ca68f5b41d40c89b197b3b5ab15ccfb3348f6b42d737a20787544090",
+        "bytes": 1411244,
+        "wav_rms": 0.16001278447703543
+      },
+      {
+        "file": "melody.mid",
+        "seconds": 32,
+        "sha256": "9c7ca0457a1a869f506a1d29af56b2329d05227b0113178ecaac03a0a0cc17fd",
+        "bytes": 735,
+        "wav_rms": null
+      },
+      {
+        "file": "melody.wav",
+        "seconds": 32,
+        "sha256": "78958556054540e84036028282b01be2c8caa2649b28b2812ed2873051a8d198",
+        "bytes": 1411244,
+        "wav_rms": 0.1399673538426757
+      },
+      {
+        "file": "original-four-bar-duet.mid",
+        "seconds": 8,
+        "sha256": "6121d6f50f8b2313e3a916820e3cfa71112eea8a4e93c55f1309acdc83733e88",
+        "bytes": 496,
+        "wav_rms": null
+      },
+      {
+        "file": "original-four-bar-duet.wav",
+        "seconds": 8,
+        "sha256": "78e13326e8716b3ae1a18a2abe4ec41bc169f270b9aa8d1c195a760497fd808c",
+        "bytes": 352844,
+        "wav_rms": 0.09289925219190848
+      },
+      {
+        "file": "original-four-bar-melody.mid",
+        "seconds": 8,
+        "sha256": "27e9385520d139a6627d9b28996b92a7db4db856c4d5d1be900f558ceb006408",
+        "bytes": 310,
+        "wav_rms": null
+      },
+      {
+        "file": "original-four-bar-melody.wav",
+        "seconds": 8,
+        "sha256": "87f119ecb298bba04a4fcb11ed90514c8025d308dd623d1389d68359e803df00",
+        "bytes": 352844,
+        "wav_rms": 0.08309188548924772
+      },
+      {
+        "file": "qnn-free-melody.mid",
+        "seconds": 32,
+        "sha256": "8413f996cedca2d6bf381df67af2322a7799fd7cb743aa26a57add44eea71a13",
+        "bytes": 601,
+        "wav_rms": null
+      },
+      {
+        "file": "qnn-free-melody.wav",
+        "seconds": 32,
+        "sha256": "b521796898c57f6c93491176960184d7b023c8d7ab1ec65a3d40f4ccb00132b3",
+        "bytes": 1411244,
+        "wav_rms": 0.14981543124707986
+      },
+      {
+        "file": "qnn-structured-melody.mid",
+        "seconds": 32,
+        "sha256": "18b6f542e8c3a146949cc48819dd0f722ec1d3c19bd3d54b7cd6296da7d81f47",
+        "bytes": 591,
+        "wav_rms": null
+      },
+      {
+        "file": "qnn-structured-melody.wav",
+        "seconds": 32,
+        "sha256": "1e10dbf34dd3290e3d541532a63e93ca98de0c9aa6eac5fd0107e2822b4cb74e",
+        "bytes": 1411244,
+        "wav_rms": 0.15114343745284
+      },
+      {
+        "file": "sampled-reference.mid",
+        "seconds": 32,
+        "sha256": "c8312a0feec2ea4a0a33673593a6d30baca67ef1a3e1c25eb721739356f78366",
+        "bytes": 757,
+        "wav_rms": null
+      },
+      {
+        "file": "sampled-reference.wav",
+        "seconds": 32,
+        "sha256": "c148c1671c96dc2b84898cda030eced8d17469e843bad7cec4a05be4f04ed44d",
+        "bytes": 1411244,
+        "wav_rms": 0.14314785824435122
+      }
+    ],
+    "browser_check": "Not executed: browser tool rejected file URLs; local links checked with HTML parser",
+    "subjective_listening": "Pending human audition; no listening verdict fabricated"
+  },
+  "tests": {
+    "experiment": "8 passed in 2.34s",
+    "existing_python": "138 passed in 25.42s",
+    "existing_node": "3 suites passed",
+    "orchestration_cli": "2 passed, rules/no-audio"
+  },
+  "subjective_listening": "Pending human audition; no auditory judgement claimed"
+}
