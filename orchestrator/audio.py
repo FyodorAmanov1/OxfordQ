@@ -47,7 +47,9 @@ def _write_pcm(path: Path, data: np.ndarray, format_: tuple) -> None:
         audio.writeframes(pcm.tobytes())
 
 
-def render_comparisons(midis: dict[str, Path], config: OrchestrationConfig, *, scores=None) -> tuple[dict[str, str], dict]:
+def render_comparisons(midis: dict[str, Path], config: OrchestrationConfig, *, scores=None, performances=None) -> tuple[dict[str, str], dict]:
+    if config.audio_renderer == "sfizz":
+        return _render_acoustic_comparisons(midis, config, scores, performances)
     executable, font = discover_audio(config)
     if not executable or font is None or not font.is_file():
         return {}, {"status": "unavailable", "message": "Install FluidSynth and provide a .sf2 SoundFont. See scripts/setup_audio.py, --fluidsynth and --soundfont."}
@@ -59,17 +61,12 @@ def render_comparisons(midis: dict[str, Path], config: OrchestrationConfig, *, s
     try:
         for name, midi in midis.items():
             destination = midi.with_suffix(".wav")
-            if scores is not None:
-                from .articulated_audio import render_score
-                data, details = render_score(scores[name], executable, font.resolve(), config.sample_rate)
-                format_ = (2, 2, config.sample_rate)
-                _write_pcm(destination, data, format_)
-                rendered[name] = (destination, data, format_)
-                diagnostics.setdefault("performance", {})[name] = details
-                continue
+            playback_midi = midi.with_name(midi.stem + ".performed.mid") if performances is not None else midi
+            if not playback_midi.is_file():
+                raise ValueError("Performed MIDI is missing: " + str(playback_midi))
             command = [executable, "-ni", "-q", "-T", "wav", "-O", "s16", "-r", str(config.sample_rate),
                        "-g", "0.25", "-o", "synth.polyphony=512",
-                       "-F", str(destination), str(font.resolve()), str(midi.resolve())]
+                       "-F", str(destination), str(font.resolve()), str(playback_midi.resolve())]
             process = subprocess.run(command, capture_output=True, text=True, timeout=180, check=False)
             if process.returncode:
                 raise RuntimeError(f"FluidSynth failed for {name}: {(process.stderr or process.stdout)[-1200:]}")
@@ -94,3 +91,39 @@ def render_comparisons(midis: dict[str, Path], config: OrchestrationConfig, *, s
         for name, (path, _, _) in rendered.items():
             artifacts[f"{name}_wav_unmatched"] = str(path.resolve())
     return artifacts, diagnostics
+
+
+def _render_acoustic_comparisons(midis, config, scores, performances):
+    from .acoustic_audio import render_acoustic
+    if scores is None or performances is None:
+        return {}, {"status":"failed", "message":"SFZ rendering requires logical scores and performance plans"}
+    rendered, artifacts, details = {}, {}, {}
+    try:
+        for name,midi in midis.items():
+            data,stems,info = render_acoustic(scores[name],performances[name],config)
+            rendered[name] = (midi.with_suffix(".wav"),data,stems)
+            details[name] = info
+        rms = {}
+        for name,(_,data,_) in rendered.items():
+            audible = np.max(np.abs(data),axis=1) > .0005
+            rms[name] = float(np.sqrt(np.mean(data[audible]**2))) if audible.any() else 0
+            if rms[name] == 0:
+                raise RuntimeError("Silent acoustic comparison: " + name)
+        gains = {name:.1/value for name,value in rms.items()}
+        peak = max(float(np.max(np.abs(data)))*gains[name] for name,(_,data,_) in rendered.items())
+        headroom = min(1,(10**(-1/20))/peak) if peak else 1
+        for name,(path,data,stems) in rendered.items():
+            gain = gains[name]*headroom
+            _write_pcm(path,data*gain,(2,2,config.sample_rate))
+            artifacts[name+"_wav"] = str(path.resolve())
+            stem_dir = path.parent / (name+".stems")
+            stem_dir.mkdir(exist_ok=True)
+            for part_id,stem in stems.items():
+                stem_path = stem_dir / (part_id+".wav")
+                _write_pcm(stem_path,stem*gain,(2,2,config.sample_rate))
+                artifacts[name+"_stem_"+part_id] = str(stem_path.resolve())
+        return artifacts,{"status":"rendered","renderer":"sfizz","performance":details,
+            "input_rms":rms,"mix_gains":{n:g*headroom for n,g in gains.items()},
+            "normalization":"One constant gain per mix; matched audible RMS and shared -1 dBFS headroom, not LUFS. Dry stems use their mix gain."}
+    except (OSError,ValueError,RuntimeError) as exc:
+        return artifacts,{"status":"failed","message":str(exc),"fallback_used":False}

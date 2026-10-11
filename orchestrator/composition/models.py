@@ -24,6 +24,7 @@ class CompositionRequest(Schema):
     compare: bool = False
     model: str = "gemini-3.8-flash"
     part_volumes: dict[str, float] = Field(default_factory=dict)
+    register_limits: dict[str, tuple[int,int]] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def instruments_valid(self):
@@ -35,6 +36,9 @@ class CompositionRequest(Schema):
         if any(i not in self.instruments or not math.isfinite(value) or not 0 <= value <= 1
                for i, value in self.part_volumes.items()):
             raise ValueError("Part volumes require selected instruments and levels from zero to one")
+        if any(i not in self.instruments or not profile(i).low<=low<=high<=profile(i).high
+               for i,(low,high) in self.register_limits.items()):
+            raise ValueError("Register limits must narrow the selected instrument's physical range")
         return self
 
 
@@ -165,6 +169,7 @@ class MotifOccurrence(Schema):
     velocity_start: int = Field(ge=1, le=127)
     velocity_end: int = Field(ge=1, le=127)
     gate: float = Field(default=.9, ge=.2, le=1, allow_inf_nan=False)
+    event_order: list[int] | None = None
 
 
 class HarmonyOccurrence(Schema):
@@ -187,6 +192,18 @@ class CompositionPlan(Schema):
     motifs: list[MotifOccurrence] = Field(min_length=1, max_length=2000)
     harmony: list[HarmonyOccurrence] = Field(default_factory=list, max_length=2000)
     rationale: str = Field(default="", max_length=4000)
+    warnings: list[str] = Field(default_factory=list)
+    phrases: list[PhraseMark] = Field(default_factory=list)
+
+
+class PhraseMark(Schema):
+    id: str
+    part_id: str
+    start_tick: int = Field(ge=0)
+    end_tick: int = Field(gt=0)
+    peak_tick: int = Field(ge=0)
+    function: Literal["question", "answer", "development", "arrival"] = "question"
+    articulation: Literal["connected", "detached", "sustained", "pizzicato"] = "connected"
 
 
 class ComposedScore(Schema):
@@ -199,6 +216,7 @@ class ComposedScore(Schema):
     # Includes silent source tokens and deliberate phrase gaps.
     occurrences: list[dict] = Field(default_factory=list)
     performance: dict[str, InstrumentPerformance] = Field(default_factory=dict)
+    phrases: list[PhraseMark] = Field(default_factory=list)
 
     @property
     def ppq(self):

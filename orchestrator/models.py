@@ -62,6 +62,11 @@ class OrchestrationConfig(Schema):
     fluidsynth: str | None = None
     soundfont: Path | None = None
     sample_rate: int = Field(default=44100, ge=8000, le=96000)
+    audio_renderer: Literal["soundfont", "sfizz"] = "soundfont"
+    sample_library: Path | None = None
+    sfizz_library: Path | None = None
+    expression_strength: float = Field(default=.6, ge=0, le=1, allow_inf_nan=False)
+    reverb_wet: float = Field(default=.14, ge=0, le=.5, allow_inf_nan=False)
     output_dir: Path | None = None
 
     @property

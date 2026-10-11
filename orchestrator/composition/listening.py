@@ -19,10 +19,17 @@ def write_study_page(out, request, report):
         wav = out / (name + ".wav")
         content += '<article><h2>' + label + '</h2>'
         if report["audio"]["status"] == "rendered" and wav.is_file():
+            if name != "raw":
+                native = out / (name + '.native.wav')
+                if native.is_file():
+                    content += '<p>Acoustic samples, without added performance shaping</p><audio controls preload="none" src="' + name + '.native.wav"></audio><p>Same notes, expressive performance</p>'
             content += '<audio controls preload="none" src="' + name + '.wav"></audio>'
         else:
             content += '<p>Audio ' + escape(report["audio"]["status"]) + '</p>'
-        content += '<p><a href="' + name + '.mid">MIDI</a> · <a href="' + name + '.score.json">Score and source lineage</a></p>'
+        content += '<p><a href="' + name + '.mid">Logical MIDI</a> · <a href="' + name + '.performed.mid">Performed MIDI</a> · <a href="' + name + '.score.json">Score and source lineage</a> · <a href="' + name + '.performance.json">Performance plan</a></p>'
+        stem_dir = out / (name + '.stems')
+        if stem_dir.is_dir():
+            content += '<p>Dry stems: ' + ' · '.join('<a href="'+escape(name+'.stems/'+p.name)+'">'+escape(p.stem)+'</a>' for p in sorted(stem_dir.glob('*.wav'))) + '</p>'
         content += '<small>' + str(metrics["seconds"]) + ' seconds · Metres ' + escape(', '.join(metrics["metres"]))
         content += ' · Ensemble span ' + str(metrics["ensemble_span_semitones"]) + ' semitones</small></article>'
     if "gemini" not in report["variants"]:
@@ -30,8 +37,11 @@ def write_study_page(out, request, report):
     content += '<p>Diagnostics describe structure; they do not measure beauty. Listen for thematic return, phrasing, balance and convincing arrivals.</p>'
     content += '<p><a href="report.json">Run report</a> · <a href="source-bank.json">Immutable source bank</a> · <a href="local.plan.json">Local composition plan</a></p>'
     if report["audio"].get("performance"):
-        content += '<p>Instrument-specific note envelopes shape attack, decay, breath/bow sustain and release. Track volume and phrase expression shape balance.</p>'
-    content += '<script>const v=document.getElementById("volume");function volume(){document.querySelectorAll("audio").forEach(a=>a.volume=Number(v.value)/100);document.getElementById("volume-value").textContent=v.value+"%";}v.addEventListener("input",volume);volume();</script>'
+        content += '<p>Acoustic sample envelopes remain intact. Phrase dynamics, articulation and shared rubato shape the performed version. Connected sustain approximates legato; this library has no recorded interval transitions.</p>'
+    warnings = report.get('composition_warnings', [])
+    if warnings:
+        content += '<p>Source limitations: ' + escape('; '.join(warnings)) + '</p>'
+    content += '<script>const v=document.getElementById("volume");const players=[...document.querySelectorAll("audio")];function volume(){players.forEach(a=>a.volume=Number(v.value)/100);document.getElementById("volume-value").textContent=v.value+"%";}players.forEach(a=>a.addEventListener("play",()=>players.forEach(b=>{if(a!==b)b.pause();})));v.addEventListener("input",volume);volume();</script>'
     (out / "index.html").write_text(_page(title, content), encoding="utf-8")
 
 

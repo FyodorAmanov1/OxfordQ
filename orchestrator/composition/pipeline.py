@@ -1,5 +1,5 @@
 """Source-preserving composition with explicit local/AI comparison status."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -14,7 +14,8 @@ from .planner import local_plan, COMPOSITION_INSTRUCTIONS
 from .compiler import compile_plan
 from .reference import raw_reference
 from .assessment import assess
-from .midi import export_composed_midi, read_composed_midi
+from .midi import export_composed_midi, export_performed_midi, read_composed_midi
+from .performer import RulePerformer, PerformancePlan, validate_performance
 
 
 @dataclass
@@ -24,15 +25,29 @@ class CompositionResult:
     scores: dict[str, ComposedScore]
     report: dict
     artifacts: dict[str, str]
+    performances: dict[str, PerformancePlan] = field(default_factory=dict)
 
 
 def compose(request, *, bank=None, registry=None, provider=None, output_dir=None,
-            render_audio=False, audio_config=None, allow_live_api=False):
+            render_audio=False, audio_config=None, allow_live_api=False, performance_adapter=None):
     """Injected providers support offline checks; live credentials are never persisted."""
     if bank is not None and registry is not None:
         raise ValueError("Supply either a source bank or a generation registry")
     if render_audio and output_dir is None:
         raise ValueError("Rendering audio requires an output directory")
+    audio_config = audio_config or OrchestrationConfig(audio_renderer="sfizz")
+    request = request.model_copy(deep=True)
+    if audio_config.audio_renderer=="sfizz":
+        from orchestrator.acoustic_audio import PLAYABLE_RANGES
+        from orchestrator.instruments import profile
+        limits = dict(request.register_limits)
+        for instrument in request.instruments:
+            if instrument in PLAYABLE_RANGES:
+                low,high = PLAYABLE_RANGES[instrument]
+                pr = profile(instrument)
+                supplied = limits.get(instrument,(pr.low,pr.high))
+                limits[instrument] = (max(low,supplied[0]),min(high,supplied[1]))
+        request.register_limits = limits
     out = Path(output_dir).resolve() if output_dir is not None else None
     if out is not None:
         if out.exists():
@@ -98,9 +113,19 @@ def compose(request, *, bank=None, registry=None, provider=None, output_dir=None
         "pitch_policy": "Every sounding note preserves its source pitch class; octave shifts only",
         "reference_policy": "Independent fixed-grid instrument-source playback; POP909 is used by composition. Raw shares the local tempo/metre map.",
         "variants": {name: assess(score, plans.get(name)) for name, score in scores.items()},
+        "composition_warnings": plan.warnings,
         "audio": {"status": "not_requested"},
     }
     artifacts = {}
+    performer = performance_adapter or RulePerformer()
+    performances = {}
+    for name, score in scores.items():
+        performances[name] = PerformancePlan.model_validate(performer.perform(score.model_copy(deep=True),
+            style=request.style, seed=request.seed, strength=0 if name == "raw" else audio_config.expression_strength))
+        validate_performance(score, performances[name])
+    report["performance"] = {name:{"adapter":p.adapter,"strength":p.strength,
+        "seconds":round(p.timeline.seconds_at(p.timeline.end_tick),3),"warnings":p.warnings}
+        for name,p in performances.items()}
     if out is not None:
         def write(name, value):
             path = out / name
@@ -119,15 +144,36 @@ def compose(request, *, bank=None, registry=None, provider=None, output_dir=None
             _check_round_trip(score, midi)
             artifacts[name + "_midi"] = str(midi)
             midis[name] = midi
+            write(name + ".performance.json", performances[name])
+            performed_midi = out / (name + ".performed.mid")
+            export_performed_midi(score, performances[name], performed_midi)
+            artifacts[name + "_performed_midi"] = str(performed_midi)
         if render_audio:
-            audio, report["audio"] = render_comparisons(midis, audio_config or OrchestrationConfig(), scores=scores)
+            render_scores = dict(scores)
+            render_performances = dict(performances)
+            render_midis = dict(midis)
+            for name, score in scores.items():
+                if name == "raw":
+                    continue
+                native_name = name + ".native"
+                render_scores[native_name] = score
+                native = RulePerformer().perform(score, style=request.style, seed=request.seed, strength=0)
+                render_performances[native_name] = native
+                write(native_name + ".performance.json", native)
+                render_midis[native_name] = out / (native_name + ".mid")
+                export_performed_midi(score,native,render_midis[native_name])
+                export_performed_midi(score,native,out / (native_name + ".performed.mid"))
+                artifacts[native_name + "_midi"] = str(render_midis[native_name])
+                artifacts[native_name + "_performed_midi"] = str(out / (native_name + ".performed.mid"))
+            audio, report["audio"] = render_comparisons(render_midis, audio_config, scores=render_scores,
+                                                       performances=render_performances)
             artifacts.update(audio)
             if report["audio"]["status"] == "rendered":
                 durations = {}
-                for name, score in scores.items():
-                    with wave.open(str(midis[name].with_suffix(".wav")), "rb") as wav:
+                for name, score in render_scores.items():
+                    with wave.open(str(render_midis[name].with_suffix(".wav")), "rb") as wav:
                         seconds = wav.getnframes() / wav.getframerate()
-                    expected = score.timeline.seconds_at(score.end_tick)
+                    expected = render_performances[name].timeline.seconds_at(score.end_tick)
                     if seconds + .05 < expected:
                         raise ValueError("Rendered audio truncates the tempo timeline")
                     durations[name] = {"wav_seconds": round(seconds, 3), "timeline_seconds": round(expected, 3),
@@ -136,15 +182,16 @@ def compose(request, *, bank=None, registry=None, provider=None, output_dir=None
         from .listening import write_study_page
         write_study_page(out, request, report)
         artifacts["listening_page"] = str(out / "index.html")
-        report["files_sha256"] = {Path(path).name: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        report["files_sha256"] = {str(Path(path).relative_to(out)): hashlib.sha256(Path(path).read_bytes()).hexdigest()
                                   for path in artifacts.values()}
         write("report.json", report)
-    return CompositionResult(bank, plans, scores, report, artifacts)
+    return CompositionResult(bank, plans, scores, report, artifacts, performances)
 
 
 def _constraints(request):
     from orchestrator.instruments import profile
-    return {i: {"low": profile(i).low, "high": profile(i).high,
+    return {i: {"low": request.register_limits.get(i,(profile(i).low,profile(i).high))[0],
+                "high": request.register_limits.get(i,(profile(i).low,profile(i).high))[1],
                 "polyphony": profile(i).polyphony} for i in request.instruments}
 
 
