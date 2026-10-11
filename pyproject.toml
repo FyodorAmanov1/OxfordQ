@@ -17,6 +17,7 @@ quantum = ["qiskit==2.5.2"]
 [project.scripts]
 qml-orchestrate = "orchestrator.cli:main"
 qml-orchestra = "quantum_models.orchestra:main"
+qml-compose = "orchestrator.composition.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["orchestrator*", "quantum_models*"]

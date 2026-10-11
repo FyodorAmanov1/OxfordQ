@@ -82,6 +82,9 @@ def main(argv=None):
          "--no-audio", "--out", out / "wheel-smoke/orchestra"], cwd=out)
     run([executable, "-m", "quantum_duet", "--shots", "32",
          "--out", out / "wheel-smoke/duet.json"], cwd=out)
+    run([executable, "-m", "orchestrator.composition", "--style", "debussy", "--bars", "12",
+         "--no-audio", "--out", out / "wheel-smoke/composition"], cwd=out)
+    run([executable.parent / ("qml-compose.exe" if sys.platform == "win32" else "qml-compose"), "--help"], cwd=out)
     artifacts = sorted(wheels.glob("*.whl")) + sorted(out.glob("*.zip"))
     source_names = subprocess.check_output(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"], cwd=ROOT)

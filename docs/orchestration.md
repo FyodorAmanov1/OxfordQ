@@ -1,5 +1,9 @@
 # How independent parts become an arrangement
 
+For the new motif-development stage with changing metre and tempo, see
+[expressive composition](composition.md). The arranger described below retains
+its fixed-timeline contract; composition uses a separate source-preserving contract.
+
 A composer assigns each part a musical job, gives the parts a common timeline,
 and chooses which contrasts to keep. Notes need not all belong to one chord:
 passing notes, suspensions and other tensions can sound intentional when their

@@ -8,6 +8,25 @@ See [orchestration theory and model boundaries](docs/orchestration.md).
 
 Licensed under the [MIT License](LICENSE).
 
+## Expressive composition
+
+Compose contrasting studies from the frozen QML motif and harmony banks:
+
+~~~powershell
+python -m orchestrator.composition --style all --out output-expressive-studies --require-audio
+~~~
+
+This produces piece1–piece4 (Bach, Mozart, Debussy and Rachmaninoff inspiration),
+with a listening page, source/reference comparisons and traceable MIDI/score output.
+Use --no-audio for MIDI only. The composition stage develops motifs, rhythm,
+register, phrase rests, dynamics and metre/tempo maps while retaining source pitch
+classes. Existing arrangement and Quantum Duet behavior remain available.
+
+See [composition usage, model replacement and limitations](docs/composition.md).
+The local baseline is procedural; optional Gemini uses validated source-referenced
+plans. Live API calls require explicit --live-gemini; offline provider comparisons
+are supported. No new model training is required.
+
 ## Current local model pipeline
 
 The repository includes the frozen motif QCBM and POP909 harmony checkpoints.

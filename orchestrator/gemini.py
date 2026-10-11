@@ -33,7 +33,7 @@ def safe_error(exc: Exception) -> str:
 
 
 class GeminiProvider:
-    def __init__(self, config: OrchestrationConfig):
+    def __init__(self, config: OrchestrationConfig, *, instructions: str = SYSTEM_INSTRUCTIONS):
         from google import genai
         from google.genai import types
 
@@ -41,6 +41,7 @@ class GeminiProvider:
         if not api_key:
             raise ValueError("Set GEMINI_API_KEY (or GOOGLE_API_KEY), or select --backend rules")
         self.config = config
+        self.instructions = instructions
         self.calls = 0
         self.client = genai.Client(api_key=api_key, http_options=types.HttpOptions(
             timeout=config.api_timeout_seconds * 1000,
@@ -50,7 +51,7 @@ class GeminiProvider:
         if self.calls >= self.config.max_api_calls:
             raise RuntimeError("Configured API call budget exhausted")
         self.calls += 1
-        prompt = SYSTEM_INSTRUCTIONS + "\nTASK DATA:\n" + json.dumps(payload, ensure_ascii=False)
+        prompt = getattr(self, "instructions", SYSTEM_INSTRUCTIONS) + "\nTASK DATA:\n" + json.dumps(payload, ensure_ascii=False)
         if feedback:
             prompt += "\nCORRECT THESE VALIDATION ERRORS:\n" + json.dumps(feedback)
         if hasattr(self.client, "interactions"):
