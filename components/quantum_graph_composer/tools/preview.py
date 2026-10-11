@@ -21,7 +21,7 @@ class Handler(SimpleHTTPRequestHandler):
             javascript="""import {mountComposer} from './ui.mjs';
 const score=await (await fetch('output/browser-score.json')).text();
 const bank=await (await fetch('data/piano.json')).text();
-await mountComposer(async()=>score,async()=>bank);
+void mountComposer(async()=>score,async()=>bank);
 document.getElementById('status').textContent='LOCAL PREVIEW: renders the score from run.py; this browser does not submit quantum jobs.';
 document.getElementById('generate').textContent='Render local composition';
 const metadata=JSON.parse(score).metadata;

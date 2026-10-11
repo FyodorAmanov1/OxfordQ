@@ -3,13 +3,22 @@ import { renderAudio } from './audio.mjs';
 export async function mountComposer(generate, loadPiano) {
   const $=id=>document.getElementById(id);
   const urls=[];
+  let finish;
+  const lifetime=new Promise(resolve=>{finish=resolve;});
   function download(id,data,type,name){
     const url=URL.createObjectURL(new Blob([data],{type}));urls.push(url);
     $(id).href=url;$(id).download=name;
   }
   const bankPromise=loadPiano().then(text=>JSON.parse(text));
   bankPromise.catch(()=>{}); // Report a failed bank load in the generation action.
-  $('controls').addEventListener('submit',async event=>{
+  // Qollab's iframe allows scripts but not native form submission.
+  $('controls').addEventListener('keydown',event=>{
+    if(event.key==='Enter'){
+      event.preventDefault();
+      if(!$('generate').disabled)$('generate').click();
+    }
+  });
+  $('generate').addEventListener('click',async event=>{
     event.preventDefault();if(!$('controls').reportValidity())return;
     $('error').hidden=true;$('generate').disabled=true;
     const parameters={seed:Number($('seed').value),bars:Number($('bars').value),
@@ -56,5 +65,10 @@ export async function mountComposer(generate, loadPiano) {
       console.error(error);
     }
   });
-  window.addEventListener('pagehide',()=>{ $('player').pause();urls.forEach(url=>URL.revokeObjectURL(url)); },{once:true});
+  window.addEventListener('pagehide',()=>{
+    $('player').pause();urls.forEach(url=>URL.revokeObjectURL(url));finish();
+  },{once:true});
+  // Keep Qollab's backend/network bridge active for the user-triggered job.
+  // Stop ends the page; a disabled Generate button enforces one job per run.
+  return lifetime;
 }

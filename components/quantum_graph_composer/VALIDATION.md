@@ -63,11 +63,42 @@ have no tracked changes from this extraction.
 
 Qollab's official runtime, compute, upload, publication and hackathon pages were
 read on October 11, 2026. The browser/Pyodide deployment is designed for their
-documented APIs and limits. The available Qollab session was signed out during
-preparation; **this component has not yet been executed in an authenticated
-Qollab project or on the IonQ cloud**. Local BasicSimulator and localhost browser
-checks do not constitute those tests. No platform job ID or cloud result is
-invented. The team must perform the actual platform smoke test before publishing.
+documented APIs and limits. The session was initially signed out; the user
+subsequently signed in and authorized creation of a private test draft, including
+its creation terms. The draft is
+[Quantum Graph Composer](https://qollab.xyz/u/SQqqqq/quantum-graph-composer).
+It remains unpublished and has no final hackathon submission.
+
+**Authenticated Qollab built-in simulator: passed.** The initial interface
+revealed a sandbox restriction: native form submission was blocked by the
+iframe's `allow-scripts` policy. The button was changed to a direct click handler
+with Enter-key support. The restored complete bundle generated a 64-bar take
+with 512 shots, one six-qubit backend job and 1,258 note events. The ideal
+continuation took approximately 2.263 seconds. Qiskit 2.5.2 and NumPy 2.4.6 were
+reported by the actual browser Python runtime. Maximum state norm error was
+9.89e-13. The WAV decoded with readyState 4 and duration 152.943855 seconds;
+its playback time advanced during the transport check. The actual take is
+retained locally and its execution metadata is recorded in
+`evidence/qollab-local-runtime.json`. Job ID:
+`4bc775bc-5fe4-4f51-91f9-eeee0f81a864`.
+
+**Qollab free IonQ Forte 1 simulator: passed.** An initial attempt failed with
+`requests.exceptions.ConnectionError: Failed to fetch` after the JS entry had
+finished initialization. Keeping the entry's promise pending until Stop/pagehide
+preserved Qollab's remote-job bridge. A fresh run then returned 128 measured shots
+from one six-qubit circuit and produced a complete 64-bar score with 1,245 events.
+The actual SDK reported `IonQSimulatorBackend` / `ionq_simulator`, compiled depth
+87 and 223 instructions. The ideal continuation took approximately 3.450 seconds;
+its maximum norm error was 1.01e-12. The WAV loaded with readyState 4 and duration
+152.943855 seconds. Actual returned counts and metadata are in
+`evidence/qollab-ionq-runtime.json`. Confirmed job ID:
+`01a12d13-d0a3-7cfe-850a-4c0d7d422d27`.
+
+The selected dialog entry was the **Noise model / Free** IonQ Forte 1 simulator,
+not its credit-consuming physical counterpart. No physical hardware was used.
+This verifies the supplied Qollab simulator route; it does not certify the noise
+model independently or establish musical-quality advantage. The failed initial
+attempt has no confirmed job ID and is not counted as a completed simulation.
 
 The six-qubit selected-backend entrance and the 13-qubit browser-host ideal
 continuation are explicitly separate. Non-disturbing readout is a simulation
