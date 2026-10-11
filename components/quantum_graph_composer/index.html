@@ -1,0 +1,31 @@
+<main class="composer">
+  <p class="eyebrow">OXFORDQ · QUANTUM PLAYGROUND</p>
+  <h1>Quantum Graph Composer</h1>
+  <p class="intro">A theme, its variations, and a return home—shaped by evolving quantum amplitudes.</p>
+  <form id="controls">
+    <label for="seed">Composition seed<input id="seed" type="number" min="0" max="4294967295" step="1" value="1201" required></label>
+    <label for="bars">Length<select id="bars"><option value="16">16 bars · short audition</option><option value="32">32 bars · extended audition</option><option value="64" selected>64 bars · complete piece</option></select></label>
+    <label for="bpm">Tempo (BPM)<input id="bpm" type="number" min="50" max="180" value="104" required></label>
+    <label for="interaction">Quantum phase interaction<input id="interaction" type="number" min="0" max="2" step="0.1" value="0.7" required></label>
+    <label for="shots">Simulator shots<select id="shots"><option value="128">128 · remote quick run</option><option value="512" selected>512 · recommended local run</option><option value="1024">1024</option></select></label>
+    <button id="generate" type="submit">Generate music</button>
+  </form>
+  <p id="status" role="status" aria-live="polite">Choose a free simulator in Qollab’s Run dialog, then generate a piece here.</p>
+  <p id="error" role="alert" hidden></p>
+  <section id="result" hidden aria-label="Generated composition">
+    <h2>Your composition</h2><p id="summary"></p>
+    <audio id="player" controls preload="metadata" aria-label="Listen to the generated composition"></audio>
+    <nav class="downloads" aria-label="Download composition"><a id="wav">Download WAV</a><a id="midi">Download MIDI</a><a id="score">Download score and quantum decisions</a></nav>
+    <details><summary>Export text if file downloads are blocked</summary><p>Some embedded browsers block file downloads. Select all text in this field and copy it into a UTF-8 file named <code>take.json</code>. It includes the score and MIDI. The repository’s <code>tools/render_score.py</code> recreates WAV and MIDI from it.</p><label for="export-text">Complete composition export<textarea id="export-text" readonly rows="6" spellcheck="false"></textarea></label></details>
+    <h2>The generated theme</h2><p>The four-bar theme is generated during the piece. Later sections revisit its melodic intervals and rhythm.</p>
+    <div id="theme" class="theme" aria-label="Four-bar theme notes"></div>
+    <h2>What the quantum dynamics chose</h2><p id="execution"></p><p id="decisions"></p>
+    <details><summary>How composition works</summary>
+      <p>A six-qubit quantum walk runs once on your selected simulator. Its measured joint interval distribution supplies the initial contour amplitudes. A persistent 13-qubit ideal Qiskit state then evolves on 8,192 musical possibilities: melodic contour × attack rhythm × harmony. Coupled phases and interference change their joint probabilities as the piece develops.</p>
+      <p>The complete state simulation uses ideal, non-disturbing access to probabilities. It is calculated in browser Python, separately from the selected simulator. Classical musical rules choose register and chord voicings, maintain a four-bar theme, control variation, and close on the tonic. Acoustic piano samples and the backing instruments are rendered classically.</p>
+      <p>This is a creative generative mechanism. We do not claim a quantum speedup or superior musical quality.</p>
+    </details>
+  </section>
+  <p class="footnote">One selected-backend job per run. To compose again, use Qollab’s Stop → Run. Outputs are newly generated, not a recorded soundtrack. No API key or paid hardware is required.</p>
+  <footer>This effort is supported by Qollab &amp; IonQ · MIT-licensed code · Public-domain Florestan piano samples</footer>
+</main>

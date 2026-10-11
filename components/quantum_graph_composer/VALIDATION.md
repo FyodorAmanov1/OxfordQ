@@ -1,0 +1,76 @@
+# Verification record — 2026-10-11
+
+Checks below concern this component, with additional repository regressions
+reported separately. They do not establish perceptual quality or quantum advantage.
+
+## Local quantum and composition checks
+
+Seven `unittest` checks passed, first using the prior research Qiskit runtime,
+then in a newly created CPython virtual environment installed from the submitted
+`requirements.txt`. The fresh environment used Python 3.12.14, Qiskit 2.5.2,
+NumPy 2.5.4 and SciPy 1.18.1; the verified dependency versions are also recorded.
+
+- Efficient unitary evolution agrees with an independently constructed Qiskit
+  circuit using DiagonalGate and local unitary gates, to below 1e-11 in amplitude.
+- States with equal present probabilities and different phases produce different
+  future probabilities under the same dynamics.
+- The entrance interaction changes the joint contour law.
+- The selected backend is called exactly once. Invalid results and backend
+  failures raise errors without substitution or additional submissions.
+- The same seed and entrance histogram reproduce the same musical events.
+  Sixteen-bar output has four theme bars, a consistent form, valid notes and a
+  tonic ending. The variation actuator preserves hard support constraints.
+- The 10 public-domain piano sample regions cover MIDI pitches 0–127.
+
+Default complete take: seed 1201, 64 bars, 104 BPM, interaction 0.7, 512 shots.
+Qiskit BasicSimulator executed one six-qubit circuit, with compiled depth 70 and
+145 instructions including measurement. The persistent ideal continuation used
+13 qubits, 8,192 vertices and 64 substeps per bar. It produced 1,250 note events,
+four generated theme bars, and a stereo WAV of 152.943854875 seconds at 22,050 Hz.
+Maximum state-norm error was approximately 8e-12. NumPy audio peak was 0.54723.
+
+## Browser and deployment checks
+
+The canonical interface was exercised in a browser against the
+localhost preview, using a freshly generated local score. Rendering completed,
+the native audio player loaded a 2:33 WAV, and WAV/MIDI/JSON links were created.
+Web Audio produced 13,489,692 WAV bytes, with peak approximately 0.59467. The
+browser renderer and NumPy renderer use different performance random streams
+and envelope implementations; their audio is not promised to be bit-identical.
+The score and MIDI come from the same quantum-generated take.
+
+Accessibility uses native labelled inputs, a keyboard-operable form, native
+audio transport, status/alert regions, readable text, and no autoplay. This is
+implementation and browser inspection, not a complete WCAG conformance audit.
+
+The Qollab upload contains 16 files, each under the documented 2 MB limit. It
+has top-level index.html/main.js, an asynchronous callPromising Python bridge,
+a literal data/piano.json asset path, Qiskit/NumPy requirements, source notices,
+an MIT license and an automatically imported project-page write-up. No audio
+runtime, external API, environment folder or precomputed soundtrack is uploaded.
+
+## Existing repository checks
+
+The existing repository's 48 root tests passed. Windows Git checkout had converted
+one pre-existing raw JSON fixture to CRLF, changing its byte hash; restoring its
+exact Git blob locally resolved the two digest failures without a tracked edit.
+Tests used a fresh writable --basetemp because the system pytest temp directory
+was inaccessible. The existing rules-only orchestration CLI also completed with
+audio disabled and no paid model calls. Root sources and existing components
+have no tracked changes from this extraction.
+
+## Platform verification boundary
+
+Qollab's official runtime, compute, upload, publication and hackathon pages were
+read on October 11, 2026. The browser/Pyodide deployment is designed for their
+documented APIs and limits. The available Qollab session was signed out during
+preparation; **this component has not yet been executed in an authenticated
+Qollab project or on the IonQ cloud**. Local BasicSimulator and localhost browser
+checks do not constitute those tests. No platform job ID or cloud result is
+invented. The team must perform the actual platform smoke test before publishing.
+
+The six-qubit selected-backend entrance and the 13-qubit browser-host ideal
+continuation are explicitly separate. Non-disturbing readout is a simulation
+assumption, and the measured histogram is classically embedded into a coherent
+initial state with chosen phases. The remote simulator is not asked to perform
+nonphysical amplitude readout or a sequential 64-job feedback loop.

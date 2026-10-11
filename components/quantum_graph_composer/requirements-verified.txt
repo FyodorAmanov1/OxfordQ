@@ -1,0 +1,8 @@
+# Local CPython verification only; Qollab uses requirements.txt and Pyodide packages.
+qiskit==2.5.2
+numpy==2.5.4
+scipy==1.18.1
+rustworkx==0.18.1
+dill==0.4.1
+stevedore==5.9.1
+typing-extensions==4.16.0
