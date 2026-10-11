@@ -29,6 +29,11 @@ def main(argv=None):
     parser.add_argument("--require-audio", action="store_true")
     parser.add_argument("--fluidsynth")
     parser.add_argument("--soundfont", type=Path)
+    parser.add_argument("--renderer", choices=["sfizz", "soundfont"], default="sfizz")
+    parser.add_argument("--sample-library", type=Path, help="VSCO SFZ patch directory")
+    parser.add_argument("--sfizz-library", type=Path, help="sfizz shared library (.dll/.so/.dylib)")
+    parser.add_argument("--expression-strength", type=float, default=.6, help="Phrase performance strength, 0 to 1")
+    parser.add_argument("--reverb-wet", type=float, default=.14, help="Shared acoustic room amount, 0 to .5")
     args = parser.parse_args(argv)
     if args.no_audio and args.require_audio:
         parser.error("--no-audio conflicts with --require-audio")
@@ -45,7 +50,9 @@ def main(argv=None):
                 raise ValueError("Duplicate part volume " + name)
             volumes[name] = float(value)
         bank = SourceBank.model_validate_json(args.source_bank.read_text(encoding="utf-8")) if args.source_bank else None
-        audio = OrchestrationConfig(fluidsynth=args.fluidsynth, soundfont=args.soundfont)
+        audio = OrchestrationConfig(fluidsynth=args.fluidsynth, soundfont=args.soundfont,
+            audio_renderer=args.renderer, sample_library=args.sample_library, sfizz_library=args.sfizz_library,
+            expression_strength=args.expression_strength, reverb_wet=args.reverb_wet)
         studies, status = [], 0
         for index, style in enumerate(styles):
             name = f"piece{index + 1}"

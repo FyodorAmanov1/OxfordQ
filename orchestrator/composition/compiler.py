@@ -38,6 +38,8 @@ def validate_plan(plan, bank, request):
             raise ValueError("Unknown motif/target part")
         if len(occurrence.steps_ticks) != len(motif.events) or any(n <= 0 for n in occurrence.steps_ticks):
             raise ValueError("Positive rhythmic step required for each source event")
+        if occurrence.event_order is not None and sorted(occurrence.event_order) != list(range(len(motif.events))):
+            raise ValueError("Event order must be a permutation of every source event, including rests")
         if occurrence.start_tick + sum(occurrence.steps_ticks) > plan.timeline.end_tick:
             raise ValueError("Motif exceeds timeline")
     for occurrence in plan.harmony:
@@ -47,14 +49,49 @@ def validate_plan(plan, bank, request):
             raise ValueError("Harmony requires supplied non-lead targets")
         if occurrence.start_tick + occurrence.span_ticks > plan.timeline.end_tick:
             raise ValueError("Harmony exceeds timeline")
+    for phrase in plan.phrases:
+        if phrase.part_id not in request.instruments or not phrase.start_tick <= phrase.peak_tick < phrase.end_tick <= plan.timeline.end_tick:
+            raise ValueError("Invalid phrase annotation")
 
 
-def _place(pitch, instrument, target, previous=None):
+def _place(pitch, instrument, target, previous=None, limits=None):
     pr = profile(instrument)
-    candidates = [p for p in range(pr.low, pr.high + 1) if p % 12 == pitch % 12]
+    low,high = limits or (pr.low,pr.high)
+    candidates = [p for p in range(low,high + 1) if p % 12 == pitch % 12]
     if not candidates:
         raise ValueError(f"No octave placement in {instrument}")
     return min(candidates, key=lambda p: abs(p - target) + (.25 * abs(p - previous) if previous is not None else 0))
+
+
+def _voice_chord(chord, targets, sources, previous, register, limits):
+    """Small deterministic beam: root foundation, separated parts, short voice motion."""
+    targets = sorted(targets,key=lambda i:(profile(i).low+profile(i).high,i))
+    states = [(0.0,[])]
+    for index,instrument in enumerate(targets):
+        pr = profile(instrument)
+        low,high = limits.get(instrument,(pr.low,pr.high))
+        target = register-(24 if instrument in ("double_bass","tuba") else 12 if instrument in ("cello","bassoon") else 0)
+        source_ids = [chord.events[0]] if index==0 else chord.events
+        choices = []
+        for event_id in source_ids:
+            pc = sources[event_id].pitch%12
+            pitches = sorted([p for p in range(low,high+1) if p%12==pc],
+                             key=lambda p:abs(p-target)+abs(p-previous.get(instrument,target)))[:3]
+            choices.extend((event_id,p) for p in pitches)
+        expanded = []
+        for score,notes in states:
+            for event_id,pitch in choices:
+                if notes and pitch<notes[-1][2]:
+                    continue
+                distance = abs(pitch-previous.get(instrument,pitch))
+                separation = max(0,5-(pitch-notes[-1][2])) if notes else 0
+                duplicate = sum(pitch%12==n[2]%12 for n in notes)
+                cost = score+.8*distance+.2*abs(pitch-target)+3*separation+2*duplicate
+                expanded.append((cost,notes+[(instrument,event_id,pitch)]))
+        if not expanded:
+            raise ValueError("Cannot voice source chord without crossing instrument parts")
+        states = sorted(expanded,key=lambda item:(item[0],item[1]))[:24]
+    return states[0][1]
 
 
 def validate_score(score, bank, request):
@@ -79,6 +116,10 @@ def validate_score(score, bank, request):
                 raise ValueError("Output note must preserve a sounding source pitch class")
             if not pr.low <= note.pitch <= pr.high or note.end_tick > score.end_tick:
                 raise ValueError("Note violates range/timeline")
+            if score.planner!="raw" and part.id in request.register_limits:
+                low,high = request.register_limits[part.id]
+                if not low<=note.pitch<=high:
+                    raise ValueError("Note exceeds the selected sample-compatible register")
             if note.muted or note.transpose != note.pitch - source.pitch:
                 raise ValueError("Composition retains sounding occurrences with truthful octave shifts")
             capacity.extend([(note.onset_tick, 1), (note.end_tick, -1)])
@@ -108,7 +149,9 @@ def validate_score(score, bank, request):
         expected = groups.get(group) if kind == "motif" else chord_groups.get(group) if kind == "harmony" else [group] if kind == "source" else None
         if expected is None or any(slot["source_id"] not in expected for slot in occurrence["events"]):
             raise ValueError("Occurrence references unknown source group")
-        if kind == "motif" and [slot["source_id"] for slot in occurrence["events"]] != expected:
+        order = occurrence.get("event_order",list(range(len(expected))))
+        if kind == "motif" and (sorted(order)!=list(range(len(expected))) or
+                [slot["source_id"] for slot in occurrence["events"]] != [expected[i] for i in order]):
             raise ValueError("Motif occurrence must preserve source ordering and rests")
         for slot in occurrence["events"]:
             event = sources.get(slot["source_id"])
@@ -155,9 +198,9 @@ def compile_plan(plan, bank, request, *, planner="local"):
             boundaries.append(round(cursor * plan.timeline.ppq * 4 / bar.denominator))
         return 3 if offset in boundaries else 0
 
-    def emit(occurrence_id, index, event_id, instrument, tick, duration, target, velocity):
+    def emit(occurrence_id, index, event_id, instrument, tick, duration, target, velocity, forced_pitch=None):
         event = source[event_id]
-        pitch = _place(event.pitch, instrument, target, previous.get(instrument))
+        pitch = forced_pitch if forced_pitch is not None else _place(event.pitch, instrument, target, previous.get(instrument),request.register_limits.get(instrument))
         previous[instrument] = pitch
         note = NoteEvent(id=f"{occurrence_id}/{index}", source_id=event.id, phrase_id=occurrence_id,
                          pitch=pitch, onset_tick=tick, duration_ticks=max(1, duration),
@@ -175,10 +218,16 @@ def compile_plan(plan, bank, request, *, planner="local"):
             # Prefer a uniform octave displacement to preserve each motif's contour.
             pitches = [source[e].pitch for e in motif.events if source[e].pitch is not None]
             pr = profile(occurrence.target_part)
+            low,high = request.register_limits.get(occurrence.target_part,(pr.low,pr.high))
             shifts = [shift for shift in range(-120, 121, 12)
-                      if pitches and all(pr.low <= pitch + shift <= pr.high for pitch in pitches)]
-            shift = min(shifts, key=lambda s: abs(mean(pitches) + s - occurrence.register_target)) if shifts else None
-            for index, (event_id, step) in enumerate(zip(motif.events, occurrence.steps_ticks)):
+                      if pitches and all(low <= pitch + shift <= high for pitch in pitches)]
+            order = occurrence.event_order or list(range(len(motif.events)))
+            ordered_events = [motif.events[i] for i in order]
+            sounding = [source[e].pitch for e in ordered_events if source[e].pitch is not None]
+            last = previous.get(occurrence.target_part)
+            shift = min(shifts, key=lambda s: abs(mean(pitches)+s-occurrence.register_target)
+                + (1.2*abs(sounding[0]+s-last) if last is not None else 0)) if shifts else None
+            for index, (event_id, step) in enumerate(zip(ordered_events, occurrence.steps_ticks)):
                 event = source[event_id]
                 if event.pitch is None:
                     slots.append({"source_id": event.id, "rest": True, "output_id": None,
@@ -193,14 +242,11 @@ def compile_plan(plan, bank, request, *, planner="local"):
         else:
             chord = chords[occurrence.chord_id]
             if occurrence.texture in ("sustained", "pedal"):
-                # Establish the chord root in the lowest available supporting voice.
-                targets = sorted(occurrence.target_parts, key=lambda i:
-                    (i not in ("double_bass", "tuba"), i not in ("cello", "bassoon")))
-                for index, instrument in enumerate(targets):
-                    event_id = chord.events[index % len(chord.events)]
+                voicing = _voice_chord(chord,occurrence.target_parts,source,previous,occurrence.register_target,request.register_limits)
+                for index, (instrument,event_id,pitch) in enumerate(voicing):
                     target = occurrence.register_target - (24 if instrument in ("double_bass", "tuba") else 12 if instrument == "cello" else 0)
                     slots.append(emit(occurrence.id, index, event_id, instrument, occurrence.start_tick,
-                        round(occurrence.span_ticks * .96), target, occurrence.velocity))
+                        round(occurrence.span_ticks * .99), target, occurrence.velocity,forced_pitch=pitch))
             else:
                 pulse = occurrence.pulse_ticks
                 for index, tick in enumerate(range(occurrence.start_tick,
@@ -216,15 +262,19 @@ def compile_plan(plan, bank, request, *, planner="local"):
                                           tick, duration, target, velocity))
         lineage.append({"id": occurrence.id, "kind": "motif" if kind == 0 else "harmony",
                         "source_group": occurrence.motif_id if kind == 0 else occurrence.chord_id,
-                        "start_tick": occurrence.start_tick, "events": slots})
+                        "start_tick": occurrence.start_tick, "events": slots,
+                        **({"event_order":occurrence.event_order or list(range(len(motif.events)))} if kind==0 else {})})
     for part in parts.values():
         part.notes.sort(key=lambda n: (n.onset_tick, n.pitch))
-        part.expression = [(start, 65 + (20 if request.bars // 3 <= bar < 2 * request.bars // 3 else 0)
-                            + (bar % 4) * 3) for bar, start in enumerate(plan.timeline.bar_starts)]
+        points = {}
+        for phrase in plan.phrases:
+            if phrase.part_id==part.id:
+                points.update({phrase.start_tick:85,phrase.peak_tick:106,min(plan.timeline.end_tick-1,phrase.end_tick-1):80})
+        part.expression = sorted(points.items())
     score = ComposedScore(title=request.style + " study", parts=list(parts.values()),
         lead_track=request.lead_track, timeline=plan.timeline,
         source_bank_sha256=bank.digest, planner=planner, occurrences=lineage,
-        performance={p.id: performance_for(p.instrument) for p in parts.values()})
+        performance={p.id: performance_for(p.instrument) for p in parts.values()},phrases=plan.phrases)
     for instrument, volume in request.part_volumes.items():
         score.performance[instrument].volume = volume
     validate_score(score, bank, request)

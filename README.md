@@ -13,6 +13,7 @@ Licensed under the [MIT License](LICENSE).
 Compose contrasting studies from the frozen QML motif and harmony banks:
 
 ~~~powershell
+python scripts/setup_acoustic.py
 python -m orchestrator.composition --style all --out output-expressive-studies --require-audio
 ~~~
 
@@ -23,8 +24,13 @@ register, phrase rests, dynamics and metre/tempo maps while retaining source pit
 classes. Existing arrangement and Quantum Duet behavior remain available.
 
 See [composition usage, model replacement and limitations](docs/composition.md).
-Audio now uses instrument-specific attack/sustain/release envelopes and per-part
-volume; browser previews and listening pages include playback volume controls.
+Composition audio uses free VSCO acoustic samples through sfizz, preserving native
+instrument envelopes. A separate performance layer adds phrase dynamics, articulation,
+breath gaps and shared rubato. Listening pages compare native and expressive versions
+of the same notes, with logical/performed MIDI and dry stems. Downloads stay in ignored
+assets; their licenses are separate from this repository's MIT license. Use
+--renderer soundfont for native FluidSynth playback. Browser previews remain oscillator
+approximations with their existing volume controls.
 The local baseline is procedural; optional Gemini uses validated source-referenced
 plans. Live API calls require explicit --live-gemini; offline provider comparisons
 are supported. No new model training is required.

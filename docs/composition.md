@@ -9,55 +9,33 @@ API, so existing orchestration and paired Quantum Duet evidence retain their beh
 Install the root package with its quantum extra, then run:
 
 ~~~powershell
+python scripts/setup_acoustic.py
 python -m orchestrator.composition --style all --out output-expressive-studies --require-audio
 # Installed console entry point:
 qml-compose --style debussy --out output-debussy --no-audio
 ~~~
 
-Choose a fresh output directory. Audio uses the existing FluidSynth/SoundFont
-discovery, or explicit --fluidsynth and --soundfont paths. The four-study collection
+Choose a fresh output directory. Composition defaults to VSCO/sfizz acoustic audio;
+see [sample setup and performance controls](natural-performance.md). Native FluidSynth
+playback remains available with --renderer soundfont. The four-study collection
 has piece1 through piece4 directories and an index.html listening page. Each study
 includes the fixed-grid reference, local composition, MIDI, score JSON, plan JSON,
 immutable source bank, diagnostics and file hashes. WAV comparisons use matched
 audible-sample RMS and shared peak headroom; this is not perceptual LUFS matching.
 
-### Instrument volume and note envelopes
+### Instrument sound and performance
 
-Playback now shapes each note independently, including simultaneous notes. A piano
-or drum strike rises quickly and decays; bowed strings have a quick bow attack and
-shaped sustain; flute has a slower breath attack and release. Other winds/brass and
-low strings have their own defaults. Short notes shorten the attack/release to fit.
-The sustained envelopes include a gentle swell and easing before the release.
-These are editable articulation defaults rather than a claim that an instrument
-always has one fixed envelope.
+The acoustic renderer keeps native sample envelopes and persistent voices. A separate
+performance plan shapes phrases, articulation, breath points, velocity and shared
+rubato. Use --expression-strength, --reverb-wet and repeated --part-volume options.
+Each listening page compares native and expressive versions of the same logical
+notes and links performed MIDI, performance JSON and dry stems.
 
-Score JSON stores an InstrumentPerformance per part: volume, attack/decay/release
-seconds, sustain level, swell, tremolo depth and struck/sustained mode. Set balance
-with repeated --part-volume arguments, for example:
-
-~~~powershell
-qml-compose --style mozart --part-volume flute=0.9 --part-volume cello=0.5 --out output-balanced
-~~~
-
-The WAV renderer uses the FluidSynth shared library and SoundFont timbres. It renders
-each note separately, replaces the sample's volume envelope with the explicit
-instrument envelope, applies velocity-sensitive sample synthesis, per-part volume,
-smoothly interpolated CC11 expression and panning, then mixes the notes. Overlapping
-notes therefore keep separate attacks/releases. Rendering is dry, without artificial
-reverb/chorus. A missing shared library is an explicit audio failure; MIDI and scores
-remain available. The Windows bundle installed by setup_audio.py includes that library.
-See the official [voice API](https://www.fluidsynth.org/api/group__voices.html) and
-[audio rendering API](https://www.fluidsynth.org/api/group__audio__rendering.html).
-
-Comparison WAVs still have matched overall RMS. Per-part volume sets ensemble
-balance; the listening page's volume slider sets overall listening level after
-normalization. MIDI exports record track volume with CC7 and preserve the envelope
-parameters as text metadata. Ordinary MIDI players choose their own instrument
-envelopes; reproducing the exact WAV shape requires this renderer.
-
-The Duet and POP909 browser previews also have explicit volume controls and note
-envelopes. They use oscillator approximations rather than SoundFont samples. These
-controls affect playback preferences and add no quantum shots or source-note edits.
+Legacy InstrumentPerformance envelope fields remain readable, but acoustic playback
+uses only their part volume. The old isolated-note renderer is retained for historical
+phrase comparisons. Duet and POP909 browser previews keep their existing oscillator
+playback. See [natural performance](natural-performance.md) for setup, interfaces,
+comparison commands and library limitations.
 
 | Study | Inspiration | Default bars | Main contrast |
 |---|---|---:|---|
@@ -97,10 +75,12 @@ flowchart LR
   tuplets; the local reference uses a 40-tick grid at PPQ 480.
 - **Register and balance:** Motifs prefer uniform octave displacement to retain
   their contour. Harmony spreads chord tones among parts and uses prior placement
-  when choosing register. Local phrases rise into development and settle on return.
-- **Expression:** Note velocities, CC11 expression and section/phrase tempo
-  changes shape a recorded performance. Debussy and Rachmaninoff references also
-  include intrabar tempo steps. These are discrete MIDI maps rather than continuous curves.
+  when choosing register. Sustained chord voicings are selected jointly to reduce
+  crossings and unnecessary movement. Selected sample ranges narrow octave placement;
+  raw source pitches remain untouched and unsupported raw pitches cause an audio error.
+- **Expression:** A separate performance plan supplies phrase velocity/dynamic arcs,
+  articulation, breathing, shared rubato and optional piano pedal. MIDI records the
+  tempo and controller maps; audio interpolates whole-part expression smoothly.
 - **Time:** Bar signatures use quarter-note ticks, with optional accent grouping.
   Tempo integration gives duration in seconds. MIDI records changing signatures,
   tempo events and grouping markers; velocities accent group boundaries. The original fixed-4/4 importer is unchanged;
@@ -195,7 +175,7 @@ balance and whether surprises feel purposeful.
 
 Further improvements need richer source models/datasets and a learned planner:
 longer conditional motifs, richer chromatic/harmonic vocabulary, phrase and
-cadence conditioning, articulation, detailed voice-leading objectives, and listening
+  cadence conditioning, richer recorded articulations, learned voice-leading objectives, and listening
 evaluation against classical scores. An injected transformer can implement the
 same plan contract. This implementation adds a procedural baseline and optional
 Gemini planner; it does not train a transformer or claim quantum musical advantage.
