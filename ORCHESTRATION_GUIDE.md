@@ -1,9 +1,7 @@
 # Arrangement and Generator Guide
 
 Instrument sequence generation is pluggable: each instrument can use a distinct smaller
-
 classical or QML model. This version uses an existing Gemini model through inference for
-
 arrangement. A local rule baseline is available for development and comparison.
 
 ## Setup and quick demo
@@ -19,19 +17,14 @@ python -m venv .venv
 ~~~
 
 The audio installer downloads FluidSynth's official Windows x64 release and GeneralUser
-
 GS into assets/, preserving licenses and recording versions and archive hashes. On
-
 macOS/Linux install FluidSynth separately, then run with --skip-fluidsynth.
 
 Existing assets can be supplied using --fluidsynth and --soundfont; environment
-
 alternatives are FLUIDSYNTH_PATH and SOUNDFONT_PATH.
 
 The example contains 16 synthetic parts with different source tempi and some transposed
-
 harmony. **These fixtures are not quantum-generated music.** Replace them with your
-
 QML parts to evaluate the real system.
 
 ## Gemini
@@ -45,17 +38,12 @@ GOOGLE_API_KEY is also accepted. Then run:
 ~~~
 
 The adapter uses the GenAI SDK's Interactions API with a JSON schema. Earlier compatible
-
 SDKs use generate_content. Timeouts, call budgets and up to two correction attempts are
-
 configurable. Credentials are excluded from prompts and reports.
 
 When a key is missing or proposals fail validation, the CLI writes the latest validated
-
 local arrangement and reports the fallback. --require-gemini returns exit code 2 if
-
 Gemini did not complete every stage. Offline tests make no paid API calls; live API
-
 access depends on your Google project.
 
 ## Supply QML output
@@ -78,17 +66,12 @@ Write a manifest naming the lead and each part:
 ~~~
 
 Paths are relative to the manifest. For multitrack files set midi_track to its zero-based
-
 index; optional channel is also zero-based (0–15). Multiple note-bearing tracks require
-
 explicit selection. Instrument labels are explicit and MIDI notes use sounding pitch.
 
 Beat-based events are supported through notes with pitch, onset_beats, duration_beats
-
 and velocity; see examples/note_events.json. Supply exactly one of path or notes per
-
 part. IDs use letters, digits, underscores and hyphens. Optional tempo_bpm, role and
-
 source metadata are accepted.
 
 The orchestral palette is:
@@ -103,9 +86,7 @@ timpani percussion
 These are section tracks: 15 pitched channels plus one unpitched percussion channel.
 
 Players within a section use configured polyphony. String sections use an ensemble
-
 patch. Conservative concert-pitch profiles and divisi capacity are in
-
 orchestrator/instruments.py.
 
 ## Plug in smaller instrument models
@@ -123,11 +104,8 @@ flowchart LR
 ~~~
 
 Implement generate(request) on each adapter. A GenerationRequest supplies the part ID,
-
 instrument, bars, 4/4 metre, tempo, concert-pitch range, section polyphony, optional seed
-
 and adapter-specific options. Return a GeneratedSequence or its dictionary equivalent
-
 containing exactly one of:
 
 - notes: InputNote events with MIDI pitch and quarter-note beat times;
@@ -141,19 +119,13 @@ For models producing audio, the adapter must first transcribe it to MIDI/events.
 Raw tokens, audio arrays and quantum measurement counts cannot be arranged directly.
 
 The orchestration package introduces no dependency on PyTorch, a quantum SDK or a
-
 particular sequence architecture.
 
 The generator receives instrument limits as guidance. The arranger applies its existing
-
 range, polyphony, tempo reconciliation and lead protection checks to the output. The
-
 request does not impose shared chords or give generators another instrument's sequence;
-
 harmonic reconciliation happens after independent generation. Explicit conditioning can
-
 be passed in options if your models support it. A seed may control local sampling but
-
 does not guarantee reproducible results on quantum hardware.
 
 ### Python integration
@@ -201,25 +173,18 @@ result = orchestrate_generated(
 Use CallableGenerator(function) to wrap a function that already returns decoded output.
 
 For an explicit per-part model override, set GenerationJob.model to a registered name;
-
 otherwise its instrument route is used. register() keeps one model instance per name,
-
 so multiple section tracks can reuse a checkpoint. Generation is sequential. Model
-
 instances supplied through Python remain owned by the caller.
 
 To inspect or save the generated material separately, use
-
 registry.generate_parts(jobs, lead_track, bars=16, tempo_bpm=96, parts=existing_parts).
 
 It returns a normal Manifest, which can be passed to orchestrate(). The optional parts
-
 argument accepts existing MIDI/event parts alongside generated jobs. IDs must be unique
-
 across both lists, and the lead can come from either.
 
 Pass retain_midi_dir="retained-midi" to snapshot returned files immediately. Without
-
 retention, your adapter must keep its MIDI output files stable until arrangement finishes.
 
 ### CLI integration
@@ -231,9 +196,7 @@ Run the supplied two-adapter example:
 ~~~
 
 **The example adapters are synthetic fixtures, not trained models or quantum hardware.**
-
 Replace their factory entries with your own importable Python factories. Each factory
-
 returns an object implementing generate(request), for example:
 
 ~~~json
@@ -260,19 +223,13 @@ returns an object implementing generate(request), for example:
 ~~~
 
 Only factories used by jobs are instantiated. Routes and model references are checked
-
 before loading them. Job fields also support model, bars, tempo_bpm, role, options and
-
 source. An optional parts array has the existing PartSpec format. Factories execute
-
 Python code: use manifests from trusted sources. Install your adapter module into the
-
 same environment. Factory kwargs and options are passed through as supplied; paths in
-
 them are interpreted by your adapter (the examples assume the current working directory).
 
 Existing parts' MIDI paths resolve relative to the manifest, whereas returned MIDI paths
-
 resolve relative to the Python process. Keep credentials in the environment, not JSON.
 
 --model selects the Gemini arranger, while generation models are selected in the
@@ -280,21 +237,15 @@ resolve relative to the Python process. Keep credentials in the environment, not
 generation manifest. Change --backend to gemini to use Gemini after generation.
 
 There is no automatic substitution of failed generators. A failure identifies the
-
 part and model; Python callers can inspect its chained exception for diagnostics.
 
 With an output directory, generated_parts.json saves the unarranged inputs before
-
 arrangement starts; each MIDI input is copied into input_midi/ immediately, so an adapter
-
 can reuse a temporary output filename without overwriting earlier parts. Model name,
-
 adapter, supplied version/backend metadata,
-
 requested length/tempo and seed are retained in each part's source and report.json.
 
 Sensitive options and factory kwargs are not copied into reports. Default generation
-
 length covers start_bar + bars; a job's bars can override it. Replay saved material with:
 
 ~~~powershell
@@ -302,15 +253,12 @@ length covers start_bar + bars; a job's bars can override it. Replay saved mater
 ~~~
 
 This adds the integration boundary for your future models. It does not train smaller
-
 generators or a new orchestration transformer; Gemini remains an inference provider and
-
 the local orchestrator remains a rule implementation.
 
 ## Configuration and edit policy
 
 The example configuration supplies key/chord overrides. Omit them to infer harmony from
-
 the lead or let Gemini propose a progression.
 
 | Setting | Default |
@@ -326,67 +274,46 @@ the lead or let Gemini propose a progression.
 | Model calls / correction attempts | 18 total / at most 2 per stage |
 
 Configuration fields include bars, start_bar, window_bars, ppq, tempo_bpm, key, chords,
-
 backend, model, edit_budget, max_corrections, max_api_calls, api_timeout_seconds,
-
 render_audio, soundfont, fluidsynth and sample_rate. A supplied chord list repeats with
-
 one chord per bar. Config-relative SoundFont paths are resolved relative to that file.
 
 Lead timing and pitches are preserved except one uniform octave shift to fit its
-
 instrument. A lead that cannot fit this way is rejected. Gemini may adjust lead
-
 dynamics and pan. Phrase transforms affect every source note equally; individual
-
 edits count cumulatively against the source after group transposition, including
-
 baseline repairs.
 
 Muting retains source identifiers and is reported separately from the edit budget.
 
 Muting over half a part's notes generates a review warning. Proposals are atomic and
-
 rejected for unknown IDs, edits to context, broken timing, range/polyphony violations,
-
 or excessive edits. Valid window proposals are kept when the diagnostic score does
-
 not substantially worsen.
 
 Source tempi map to a shared pulse, preserving beat positions. Input with metre changes,
-
 non-4/4, or tempo changes within a file is rejected. Short parts end in rests; excerpt
-
 boundary clipping is reported. Sustain becomes longer note durations. Other controllers
-
 and pitch bends are omitted with warnings. Entrances/rests are primarily scheduled at
-
 note onsets; a note sustaining from a preceding region is not cut by a silence directive.
 
 ## Outputs and assessment
 
 The output folder contains original.mid, baseline.mid and arrangement.mid plus WAV
-
 comparisons when rendering succeeds. normalized_input.json and arrangement.json
-
 preserve exact note state. report.json includes source metadata, harmonies, edits,
-
 model failures, lineage, metrics and artifact paths.
 
 WAV comparisons use the same SoundFont and sample rate. Audible-sample RMS is matched
-
 with shared peak headroom; this is a comparison proxy, not perceptual LUFS.
 
 Baseline and arrangement are identical in rule-only mode.
 
 Metrics consider chord coverage with short passing/neighbor notes, monophonic melodic
-
 motion, accompaniment retention, rough intervals, density, edit severity and a MIDI
-
 velocity balance proxy. They do not establish musical quality or actual audibility.
 
 Listen for melody clarity, coherence, phrasing, balance, transitions and recognisable
-
 QML motifs. Preview rendering and range checks do not certify live performance.
 
 ## Python API
@@ -402,7 +329,6 @@ print(result.report["provider_status"])
 ~~~
 
 Use output_dir=None for in-memory results. A custom provider adapter can be injected
-
 with provider=. quantumOrchestrator.py is a compatibility CLI entry.
 
 ## Checks
@@ -414,7 +340,5 @@ with provider=. quantumOrchestrator.py is a compatibility CLI entry.
 ~~~
 
 Tests cover lead/provenance protection, independent tempi, MIDI selection, sustain,
-
 excerpt boundaries, key reconciliation, budgets, malformed edits, instrument
-
 constraints, failed plans, correction feedback, provider failures and SDK request shape.
